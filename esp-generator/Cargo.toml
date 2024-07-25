@@ -1,0 +1,9 @@
+[package]
+name = "special_esp_gen"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies.tes3]
+git = "https://github.com/Greatness7/tes3"
+default-features = false
+features = ["esp"]  # add "nif" only if you need it

@@ -1,0 +1,6 @@
+setting_special_page: 'Special'
+setting_special_group: 'General'
+setting_open_special_main_element_key: 'Open Special Window Key'
+setting_open_special_main_element_key_description: 'The keyboard key used to open the Special Window'
+setting_disable_special_skill_progression_modifier: 'Enable Special Skill Progression Modifier'
+setting_disable_special_skill_progression_modifier_description: 'Enables the skill progression modifier resulting from the chosen advantages/disadvantages'
