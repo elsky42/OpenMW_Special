@@ -2,4 +2,4 @@ run-docker-build.sh
 run-docker-run.sh
 esp-generator/target
 omwscripts/.vscode
-special.zip
+special.*.zip

@@ -1,0 +1,23 @@
+on: [push, workflow_dispatch]
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        name: Releases the OpenMW Special mod
+        steps:
+            - name: Checkout the repository
+              uses: actions/checkout@v4
+            - name: Get the git reference
+              id: vars
+              run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            - name: Check outputs
+              run: echo ${{ steps.vars.outputs.sha_short }}
+            - name: Build and run the Docker image
+              run: |
+                docker build --progress=plain -t openmw-special-builder .
+                docker run -v "$(pwd)":/workdir openmw-special-builder
+            - name: Release the OpenMW Special mod
+              uses: ncipollo/release-action@v1
+              with:
+                artifacts: "special*.zip"
+                tag: ${{ steps.vars.outputs.sha_short }}
