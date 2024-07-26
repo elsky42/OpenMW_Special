@@ -20,4 +20,5 @@ jobs:
               uses: ncipollo/release-action@v1
               with:
                 artifacts: "special*.zip"
-                tag: ${{ steps.vars.outputs.sha_short }}
+                name: OpenMW Special Mod ${{ steps.vars.outputs.sha_short }}
+                tag: openmw-special-${{ steps.vars.outputs.sha_short }}
