@@ -1,8 +1,10 @@
 local async = require('openmw.async')
 local auxUi = require('openmw_aux.ui')
+local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
 local I = require('openmw.interfaces')
+local nearby = require('openmw.nearby')
 local self = require('openmw.self') as core.GameObject
 local storage = require('openmw.storage')
 local types = require('openmw.types')
@@ -19,6 +21,10 @@ local V2 = util.Vector2
 
 local specials: AdvantagesDisadvantages = nil
 local specialsSkillMultiplier: number = 1
+local phobias: {Special} = {}
+local phobiaCheckEvery: number = 2
+local phobiaTimeSinceCheck: number = 0
+local phobiaTimeSinceLastTriggerred: number = 0
 local mainElement: ui.Element = nil 
 local createMainElement: function() = nil
 local editElement: ui.Element = nil
@@ -468,12 +474,15 @@ local function applySpecials()
         if disadvantage.abilityId then
             types.Actor.spells(self):add(disadvantage.abilityId)
         end
+
+        local phobiaOf = disadvantage.phobiaOf
+        if phobiaOf is {string} then
+            table.insert(phobias, disadvantage)
+        end
     end
 
     specialsSkillMultiplier = calculateSpecialsSkillMultiplier(specials:cost())
     print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
-
-    -- maxHpPerLevel = specials.maxHp
 end
 
 local function createApplyElement()
@@ -629,6 +638,9 @@ local function loadPlayerSpecials()
             end
         end
     end
+    for _, phobia in ipairs(phobias) do
+        table.insert(specials.disadvantages, phobia)
+    end
 end
 
 local function onKeyPress(key: input.KeyboardEvent)
@@ -645,6 +657,7 @@ local function onKeyPress(key: input.KeyboardEvent)
         editElementChangeSelection(1)
     elseif editElement and key.code == input.KEY.Enter then
         -- TODO
+
     end
 end
 
@@ -653,8 +666,56 @@ local function onMouseWheel(vertical: integer, _)
     editElementChangeSelection(-vertical)
 end
 
+local function onUpdate(dt: number)
+    if not phobias then return end
+
+    if types.Actor.activeSpells(self):isSpellActive('special_phobia') then
+        phobiaTimeSinceLastTriggerred = phobiaTimeSinceLastTriggerred + dt
+        -- phobia last between 10s and 60s depending on the wisdom
+        local willpower = types.Actor.stats.attributes.willpower(self).modified
+        local duration = math.max(10, 60 - 0.5 * willpower)
+        -- print('phobiaTimeSinceLastTriggerred:' .. tostring(phobiaTimeSinceLastTriggerred) .. ' duration:' .. tostring(duration))
+        if phobiaTimeSinceLastTriggerred >= duration then
+            -- print('Removing special_phobia')
+            types.Actor.activeSpells(self):remove('special_phobia')
+        end
+    else
+        -- limit how many times the checks are done
+        phobiaTimeSinceCheck = phobiaTimeSinceCheck + dt
+        if phobiaTimeSinceCheck < phobiaCheckEvery then return end
+        phobiaTimeSinceCheck = 0
+
+        local res = nearby.castRay(camera.getPosition(), camera.getPosition() + camera.viewportToWorldVector(v2(0.5, 0.5)) * 2048, {ignore=self})
+        if res and res.hitObject and types.Creature.objectIsInstance(res.hitObject) then
+            local creature = res.hitObject as types.Creature
+            for _, special in ipairs(phobias) do
+                for _, phobia in ipairs(special.phobiaOf or {}) do
+                    if string.find(types.Creature.record(creature).id:lower(), phobia) then
+                        phobiaTimeSinceLastTriggerred = 0
+                        print('is spell active:' .. tostring(types.Actor.activeSpells(self):isSpellActive('special_phobia')))
+                        if not types.Actor.activeSpells(self):isSpellActive('special_phobia') then
+                            ui.showMessage(special.name .. ' triggered by ' .. types.Creature.record(creature).name)
+                            types.Actor.activeSpells(self):add {
+                                id = 'special_phobia',
+                                name = 'Phobia',
+                                effects = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 },
+                                ignoreResistances = true,
+                                ignoreSpellAbsorption = true,
+                                ignoreReflect = true,
+                                stackable = false,
+                                temporary = true,
+                            }
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function onSave(): table
     return {
+        phobias = phobias,
         specialsSkillMultiplier = specialsSkillMultiplier,
     }
 end
@@ -664,12 +725,15 @@ local function onLoad(data: table)
         specialsSkillMultiplier = data.specialsSkillMultiplier as number
         print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
     end
+    if data.phobias then
+        phobias = data.phobias as {Special}
+    end
 end
 
 return {
     engineHandlers = {
         onKeyPress = onKeyPress,
-        -- onUpdate = onUpdate,
+        onUpdate = onUpdate,
         onMouseWheel = onMouseWheel,
         onSave = onSave,
         onLoad = onLoad,

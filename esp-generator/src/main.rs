@@ -1,6 +1,57 @@
-use std::{env::args, u32};
+use tes3::esp::{AttributeId2, Effect, EffectId2, FileType, FixedString, Header, ObjectFlags, Plugin, SkillId2, Spell, SpellData, SpellType, TES3Object};
 
-use tes3::esp::{AttributeId2, Effect, EffectId2, FileType, FixedString, Header, ObjectFlags, Plugin, SkillId, SkillId2, Spell, SpellData, SpellType, TES3Object};
+fn phobia() -> TES3Object {
+    let mut effects = vec![];
+    for skill in [SkillId2::Acrobatics,
+                  SkillId2::Alchemy,
+                  SkillId2::Alteration,
+                  SkillId2::Armorer,
+                  SkillId2::Athletics,
+                  SkillId2::Axe,
+                  SkillId2::Block,
+                  SkillId2::BluntWeapon,
+                  SkillId2::Conjuration,
+                  SkillId2::Destruction,
+                  SkillId2::Enchant,
+                  SkillId2::HandToHand,
+                  SkillId2::HeavyArmor,
+                  SkillId2::Illusion,
+                  SkillId2::LightArmor,
+                  SkillId2::LongBlade,
+                  SkillId2::Marksman,
+                  SkillId2::MediumArmor,
+                  SkillId2::Mercantile,
+                  SkillId2::Mysticism,
+                  SkillId2::Restoration,
+                  SkillId2::Security,
+                  SkillId2::ShortBlade,
+                  SkillId2::Sneak,
+                  SkillId2::Spear,
+                  SkillId2::Speechcraft,
+                  SkillId2::Unarmored] {
+        effects.push(Effect {
+            magic_effect: EffectId2::DrainSkill,
+            skill,
+            attribute: AttributeId2::None,
+            range: 0,
+            area: 0,
+            duration: 60, // 86400, // 1 day
+            min_magnitude: 20,
+            max_magnitude: 20,
+        });
+    }
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_phobia".to_owned(),
+        name: Some("Phobia".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Spell,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(effects),
+    })
+}
 
 fn ability<S: Into<String>>(name: S, magic_effect: EffectId2, skill: SkillId2, attribute: AttributeId2, magnitude: u32) -> TES3Object {
     let name = name.into();
@@ -151,6 +202,8 @@ fn main() {
 
     plugin.add_base_ability("Shadowborn", EffectId2::Chameleon, 20);
     plugin.add_base_ability("Dodger", EffectId2::Sanctuary, 20);
+
+    plugin.objects.push(phobia());
 
     // plugin.objects.push(TES3Object::Spell(Spell {
     //     flags: ObjectFlags::empty(),

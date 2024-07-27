@@ -15,6 +15,10 @@ global record Special
     -- if the special is selected
     abilityId: string | nil
 
+    -- The potentially multiple patterns that
+    -- the id has to match to trigger a phobia
+    phobiaOf: {string} | nil
+
     cost: number
 end
 
@@ -30,6 +34,8 @@ local function checkAbilityExists(abilityId: string)
         error('Ability ' .. abilityId .. ' not found in game! Please load the plugin special.omwaddon.')
     end
 end
+
+checkAbilityExists('special_phobia')
 
 local function addSpecial(special: Special)
     if special.abilityId then
@@ -293,6 +299,112 @@ addSpecial {
     abilityId = 'special_dodger',
     cost = 20,
 }
+
+-- Phobias
+
+---- ash creatures
+addSpecial {
+    id = 'phobia_of_ash_creatures',
+    name = 'Phobia of Ash Creatures (-20 all skills)',
+    phobiaOf = {'ascended_sleeper', 'dagoth', 'ash', 'corprus'},
+    cost = -30,
+}
+
+---- beasts
+for _, beastAndMatch in ipairs({
+        {'alit', {'alit'}},
+        {'cliff racer', {'cliff.*racer'}},
+        {'dreugh', {'dreugh'}},
+        {'guar', {'guar'}},
+        {'kagouti', {'kagouti'}},
+        {'mudcrab', {'mudcrab'}},
+        {'netch', {'netch'}},
+        {'nix-hound', {'nix.*hound'}},
+        {'rat', {'rat'}},
+        {'shalk', {'shalk'}},
+        {'slaughterfish', {'slaughterfish'}},
+        {'kwama', {'kwama', 'scrib'}},
+    }) do
+    addSpecial {
+        id = 'phobia_of_' .. spacesToUnderscores(beastAndMatch[1]),
+        name = 'Phobia of ' .. firstToUpper(beastAndMatch[1]) .. ' (-20 all skills)',
+        phobiaOf = beastAndMatch[2],
+        cost = -2,
+    }
+end
+
+---- Daedra
+addSpecial {
+    id = 'phobia_of_daedra',
+    name = 'Phobia of Daedra (-20 all skills)',
+    phobiaOf = {'atronach', 'clannfear', 'daedroth', 'dremora', 'golden.*saint', 'hunger', 'ogrim', 'scamp', 'winged.*twilight'},
+    cost = -40,
+}
+
+for _, daedraAndMatch in ipairs({
+    {'atronach', {'atronach'}},
+    {'clannfear', {'clannfear'}},
+    {'daedroth', {'daedroth'}},
+    {'dremora', {'dremora'}},
+    {'golden saint', {'golden.*saint'}},
+    {'hunger', {'hunger'}},
+    {'ogrim', {'ogrim'}},
+    {'scamp', {'scamp'}},
+    {'winged twilight', {'winged.*twilight'}},
+}) do
+    addSpecial {
+        id = 'phobia_of_' .. spacesToUnderscores(daedraAndMatch[1]),
+        name = 'Phobia of ' .. firstToUpper(daedraAndMatch[1]) .. ' (-20 all skills)',
+        phobiaOf = daedraAndMatch[2],
+        cost = -5,
+    }
+end
+
+---- Dwemer Constructs
+addSpecial {
+    id = 'phobia_of_dwemer_constructs',
+    name = 'Phobia of Dwemer Constructs (-20 all skills)',
+    phobiaOf = {'centurion'},
+    cost = -20,
+}
+
+---- Undeads
+addSpecial {
+    id = 'phobia_of_ghosts',
+    name = 'Phobia of Ghosts (-20 all skills)',
+    phobiaOf = {'ghost', 'wraith', 'gateway.*haunt', 'ancestor.*guardian', 'ancestor.*wisewoman', 'dahrik.*mezalf'},
+    cost = -10,
+}
+
+addSpecial {
+    id = 'phobia_of_boneundead',
+    name = 'Phobia of Bone Undead (-20 all skills)',
+    phobiaOf = {'bonelord', 'bonewalker', 'wolf.*bone'},
+    cost = -10,
+}
+
+addSpecial {
+    id = 'phobia_of_skeletons',
+    name = 'Phobia of Skeletons (-20 all skills)',
+    phobiaOf = {'skeleton', 'worm.*lord'},
+    cost = -10,
+}
+
+addSpecial {
+    id = 'phobia_of_liches',
+    name = 'Phobia of Liches (-20 all skills)',
+    phobiaOf = {'lich'},
+    cost = -10,
+}
+
+addSpecial {
+    id = 'phobia_of_draugr',
+    name = 'Phobia of Draugr (-20 all skills)',
+    phobiaOf = {'draugr'},
+    cost = -10, -- too few?
+}
+
+-- /Phobias
 
 global record AdvantagesDisadvantages
     maxHp: number
