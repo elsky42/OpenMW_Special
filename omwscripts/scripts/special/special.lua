@@ -18,6 +18,7 @@ local v2 = util.vector2
 local V2 = util.Vector2
 
 local specials = nil
+local specialsSkillMultiplier = 1
 local mainElement = nil
 local createMainElement = nil
 local editElement = nil
@@ -407,8 +408,6 @@ local function calculateSpecialsSkillMultiplier(cost)
    end
 end
 
-local specialsSkillMultiplier = 1
-
 local function isSkillGainMultiplierEnabled()
    return settings:get('enable_special_skill_progression_modifier')
 end
@@ -654,10 +653,25 @@ local function onMouseWheel(vertical, _)
    editElementChangeSelection(-vertical)
 end
 
+local function onSave()
+   return {
+      specialsSkillMultiplier = specialsSkillMultiplier,
+   }
+end
+
+local function onLoad(data)
+   if data.specialsSkillMultiplier and data.specialsSkillMultiplier ~= 1 then
+      specialsSkillMultiplier = data.specialsSkillMultiplier
+      print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
+   end
+end
+
 return {
    engineHandlers = {
       onKeyPress = onKeyPress,
 
       onMouseWheel = onMouseWheel,
+      onSave = onSave,
+      onLoad = onLoad,
    },
 }
