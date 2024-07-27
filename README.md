@@ -1,12 +1,14 @@
 # OpenMW Special Advantages/Disadvantages Mod
 
-Inspired by the custom class creation of Daggerfall, the Special mod for OpenMW (>0.49) allows to customize a Morrowind character beyond what race/class/birthday provide.
-The goal of the mod is to allow to have unique builds based on the background and innate capabilities of a character.
+Inspired by the custom class creation of Daggerfall, the *Special* mod for OpenMW (>0.49) let you customize a Morrowind character beyond what race/class/birthday provide.
+The goal of the mod is to allow you to have unique builds based on the background and innate capabilities of a character.
 
 For instance, a breton that had a thief as father figure can be more agile than the standard breton while lacking in wisdom.
 A nord descending from a family of smiths can have a resistance to fire because they worked the forge daily.
 A orc raised as scholar may be unable to use any type of weapons effectively but may be a proficient mage.
 And so on...
+
+![Example](openmw_special_mod_example.png)
 
 ## Installing
 
