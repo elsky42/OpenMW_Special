@@ -149,6 +149,9 @@ fn main() {
         plugin.add_skill_ability(format!("Inept at {name}"), EffectId2::DamageSkill, skill, 100);    
     }
 
+    plugin.add_base_ability("Shadowborn", EffectId2::Chameleon, 20);
+    plugin.add_base_ability("Dodger", EffectId2::Sanctuary, 20);
+
     // plugin.objects.push(TES3Object::Spell(Spell {
     //     flags: ObjectFlags::empty(),
     //     id: "special_healthy".to_owned(),

@@ -280,6 +280,20 @@ for _, skill in ipairs {'Heavy Armor',
     }
 end
 
+addSpecial {
+    id = 'shadowborn',
+    name = 'Shadowborn (Chameleon 20)',
+    abilityId = 'special_shadowborn',
+    cost = 20,
+}
+
+addSpecial {
+    id = 'dodger',
+    name = 'Dodger (Sanctuary 20)',
+    abilityId = 'special_dodger',
+    cost = 20,
+}
+
 global record AdvantagesDisadvantages
     maxHp: number
     advantages: {Special}
