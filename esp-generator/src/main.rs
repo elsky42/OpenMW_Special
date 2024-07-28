@@ -147,6 +147,41 @@ fn good_natured() -> TES3Object {
     })
 }
 
+fn small_frame() -> TES3Object {
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_small_frame".to_owned(),
+        name: Some("Small Frame".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Ability,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(vec![
+            Effect {
+                magic_effect: EffectId2::DrainAttribute,
+                skill: SkillId2::None,
+                attribute: AttributeId2::Endurance,
+                range: 0,
+                area: 0,
+                duration: 0,
+                min_magnitude: 10,
+                max_magnitude: 10,
+            },
+            Effect {
+                magic_effect: EffectId2::FortifyAttribute,
+                skill: SkillId2::None,
+                attribute: AttributeId2::Agility,
+                range: 0,
+                area: 0,
+                duration: 0,
+                min_magnitude: 10,
+                max_magnitude: 10,
+            }
+        ]),
+    })
+}
+
 fn ability<S: Into<String>>(name: S, magic_effect: EffectId2, skill: SkillId2, attribute: AttributeId2, magnitude: u32) -> TES3Object {
     let name = name.into();
     let id = "special_".to_owned() + &name.to_lowercase().replace(" ", "_");
@@ -300,6 +335,7 @@ fn main() {
     plugin.objects.push(phobia());
     plugin.objects.push(night_person());
     plugin.objects.push(good_natured());
+    plugin.objects.push(small_frame());
 
     plugin.save_path(output_file).unwrap()
 }

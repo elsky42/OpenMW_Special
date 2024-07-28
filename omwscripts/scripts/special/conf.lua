@@ -445,6 +445,13 @@ addSpecial({
    cost = 0,
 })
 
+addSpecial({
+   id = 'small_frame',
+   name = 'Small Frame',
+   abilityId = 'special_small_frame',
+   cost = 0,
+})
+
 AdvantagesDisadvantages = {}
 
 
