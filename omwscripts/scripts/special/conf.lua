@@ -1,8 +1,9 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local core = require('openmw.core')
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local core = require('openmw.core')
 
 maxDifficultyPoints = 50
 maxPaddingPoints = 20
 maxValidDifficultyPoints = maxDifficultyPoints - maxPaddingPoints
+reputationCost = 2
 
 Special = {}
 
@@ -21,6 +22,30 @@ Special = {}
 
 
 
+
+
+
+
+function Special:new(special)
+   assert(special)
+   local self = setmetatable(special, { __index = Special })
+   return self
+end
+
+function Special:copy()
+   local copy = Special:new()
+   copy.id = self.id
+   copy.name = self.name
+   copy.abilityId = self.abilityId
+   copy.abilityIdAtNight = self.abilityIdAtNight
+   local phobiaOf = self.phobiaOf
+   if type(phobiaOf) == "table" then
+      for _, phobia in ipairs(phobiaOf) do
+         table.insert(copy.phobiaOf, phobia)
+      end
+   end
+   copy.cost = self.cost
+end
 
 advantages = {}
 advantagesById = {}
@@ -406,7 +431,16 @@ addSpecial({
 
 
 
+addSpecial({
+   id = 'night_person',
+   name = 'Night Person (+10 AGI/INT/WIL/CHA at night)',
+   abilityIdAtNight = 'special_night_person',
+   cost = 10,
+})
+
 AdvantagesDisadvantages = {}
+
+
 
 
 
@@ -417,7 +451,22 @@ function AdvantagesDisadvantages:new()
    self.maxHp = 0
    self.advantages = {}
    self.disadvantages = {}
+   self.reputation = {}
    return self
+end
+
+function AdvantagesDisadvantages:copy()
+   local copy = AdvantagesDisadvantages:new()
+   copy.maxHp = self.maxHp
+   for _, special in ipairs(self.advantages) do
+      table.insert(copy.advantages, special:copy())
+   end
+   for _, special in ipairs(self.disadvantages) do
+      table.insert(copy.disadvantages, special:copy())
+   end
+   for factionId, reputationModifier in pairs(self.reputation) do
+      copy.reputation[factionId] = reputationModifier
+   end
 end
 
 function AdvantagesDisadvantages:isNotEmpty()
@@ -431,6 +480,13 @@ function AdvantagesDisadvantages:cost()
    end
    for _, disadvantage in ipairs(self.disadvantages) do
       cost = cost + disadvantage.cost
+   end
+   for _, reputation in pairs(self.reputation) do
+      if reputation < 0 then
+         cost = cost - reputationCost
+      elseif reputation > 0 then
+         cost = cost + reputationCost
+      end
    end
    return cost
 end

@@ -3,6 +3,7 @@ local core = require('openmw.core')
 global maxDifficultyPoints = 50
 global maxPaddingPoints = 20
 global maxValidDifficultyPoints = maxDifficultyPoints - maxPaddingPoints
+global reputationCost = 2
 
 global record Special
     -- unique identifier of the special advantage/disadvantage
@@ -14,12 +15,36 @@ global record Special
     -- The id of the ability to activate
     -- if the special is selected
     abilityId: string | nil
+    
+    -- Same as abilityId but applies only at night
+    abilityIdAtNight: string | nil
 
     -- The potentially multiple patterns that
     -- the id has to match to trigger a phobia
     phobiaOf: {string} | nil
 
     cost: number
+end
+
+function Special:new(special: Special): Special
+    assert(special)
+    local self: Special = setmetatable(special, { __index = Special })
+    return self
+end
+
+function Special:copy(): Special
+    local copy = Special:new()
+    copy.id = self.id
+    copy.name = self.name
+    copy.abilityId = self.abilityId
+    copy.abilityIdAtNight = self.abilityIdAtNight
+    local phobiaOf = self.phobiaOf
+    if phobiaOf is {string} then
+        for _, phobia in ipairs(phobiaOf) do
+            table.insert(copy.phobiaOf, phobia)
+        end
+    end
+    copy.cost = self.cost
 end
 
 global advantages: {Special} = {}
@@ -406,10 +431,19 @@ addSpecial {
 
 -- /Phobias
 
+addSpecial {
+    id = 'night_person',
+    name = 'Night Person (+10 AGI/INT/WIL/CHA at night)',
+    abilityIdAtNight = 'special_night_person',
+    cost = 10,
+}
+
 global record AdvantagesDisadvantages
     maxHp: number
     advantages: {Special}
     disadvantages: {Special}
+    -- faction id -> reputation modifier
+    reputation: {string:number}
 end
 
 function AdvantagesDisadvantages:new(): AdvantagesDisadvantages
@@ -417,7 +451,22 @@ function AdvantagesDisadvantages:new(): AdvantagesDisadvantages
     self.maxHp = 0
     self.advantages = {}
     self.disadvantages = {}
+    self.reputation = {}
     return self
+end
+
+function AdvantagesDisadvantages:copy(): AdvantagesDisadvantages
+    local copy = AdvantagesDisadvantages:new()
+    copy.maxHp = self.maxHp
+    for _, special in ipairs(self.advantages) do
+        table.insert(copy.advantages, special:copy())
+    end
+    for _, special in ipairs(self.disadvantages) do
+        table.insert(copy.disadvantages, special:copy())
+    end
+    for factionId, reputationModifier in pairs(self.reputation) do
+        copy.reputation[factionId] = reputationModifier
+    end
 end
 
 function AdvantagesDisadvantages:isNotEmpty(): boolean
@@ -431,6 +480,13 @@ function AdvantagesDisadvantages:cost(): number
     end
     for _, disadvantage in ipairs(self.disadvantages) do
         cost = cost + disadvantage.cost
+    end
+    for _, reputation in pairs(self.reputation) do
+        if reputation < 0 then
+            cost = cost - reputationCost
+        elseif reputation > 0 then
+            cost = cost + reputationCost
+        end
     end
     return cost
 end

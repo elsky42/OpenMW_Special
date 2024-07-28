@@ -1,16 +1,14 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local async = require('openmw.async')
-local auxUi = require('openmw_aux.ui')
-local camera = require('openmw.camera')
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
 local I = require('openmw.interfaces')
 local nearby = require('openmw.nearby')
 local self = require('openmw.self')
 local storage = require('openmw.storage')
+local time = require('openmw_aux.time')
 local types = require('openmw.types')
 local ui = require('openmw.ui')
 local util = require('openmw.util')
-local utilAux = require('openmw_aux.util')
 local _conf = require('scripts.special.conf')
 local _widgets = require('scripts.special.widgets')
 local _ = require('scripts.special.settings')
@@ -19,17 +17,21 @@ local rgb = util.color.rgb
 local v2 = util.vector2
 local V2 = util.Vector2
 
-local specials = nil
+local specials = AdvantagesDisadvantages:new()
 local specialsSkillMultiplier = 1
 local phobias = {}
 local phobiaCheckEvery = 2
 local phobiaTimeSinceCheck = 0
 local phobiaTimeSinceLastTriggerred = 0
+local nightlys = {}
+local nightlysCheckEvery = 10
+local nightlysTimeSinceCheck = 10000000
 local mainElement = nil
 local createMainElement = nil
 local editElement = nil
 local editElementChangeSelection = nil
 local applyElement = nil
+local reputationElement = nil
 
 local settings = storage.playerSection('special_settings')
 
@@ -52,6 +54,13 @@ local function destroyApplyElement()
    if not applyElement then return end
    applyElement:destroy()
    applyElement = nil
+   I.UI.setMode()
+end
+
+local function destroyReputationElement()
+   if not reputationElement then return end
+   reputationElement:destroy()
+   reputationElement = nil
    I.UI.setMode()
 end
 
@@ -223,12 +232,12 @@ local function secondColumn()
    }
 end
 
-local function updateHitPointsText()
-   local text = lookupLayout(mainElement.layout, { 'hitPoints', 'boxedHitPoints', 'flex', '1' })
-   text.props.text = tostring(specials.maxHp)
-end
 
-local function changeHitPoints(diff)
+
+
+
+
+local function changeHitPoints(_)
    ui.showMessage('Changing hit points is not supported yet')
 
 
@@ -248,7 +257,7 @@ local function hitPoint()
       relativePosition = v2(0.1, 0.01),
       relativeSize = v2(0.8, 0.49),
    }))
-   content:add(textButton({
+   content:add(TextButton:new({
       lines = { '+' },
       events = {
          focusChange = function() mainElement:update() end,
@@ -258,8 +267,8 @@ local function hitPoint()
          relativePosition = v2(0.1, 0.5),
          relativeSize = v2(0.1, 0.2),
       },
-   }))
-   content:add(textButton({
+   }):layout())
+   content:add(TextButton:new({
       lines = { '-' },
       events = {
          focusChange = function() mainElement:update() end,
@@ -269,7 +278,7 @@ local function hitPoint()
          relativePosition = v2(0.1, 0.7),
          relativeSize = v2(0.1, 0.2),
       },
-   }))
+   }):layout())
    content:add({
       name = 'boxedHitPoints',
       content = ui.content({
@@ -324,7 +333,7 @@ local function createEditElement(availableSpecials, add)
    content:add(background({}))
    content:add(borders(true))
    content:add(scrollable:layout())
-   content:add(textButton({
+   content:add(TextButton:new({
       lines = { 'EXIT' },
       backgroundOptions = {
          color = rgb(0.1, 0, 0),
@@ -340,7 +349,7 @@ local function createEditElement(availableSpecials, add)
          relativePosition = v2(0.8, 0.8),
          relativeSize = v2(0.15, 0.15),
       },
-   }))
+   }):layout())
    editElement = ui.create({
       layer = 'Windows',
       content = content,
@@ -362,7 +371,7 @@ local function openAddDisadvantagesWindow()
 end
 
 local function editSpecialAdvantagesButton()
-   return textButton({
+   return TextButton:new({
       lines = { 'ADD', 'SPECIAL', 'ADVANTAGES' },
       backgroundOptions = {},
       events = {
@@ -373,11 +382,11 @@ local function editSpecialAdvantagesButton()
          relativePosition = v2(0.75, 0.33),
          relativeSize = v2(0.25, 0.16),
       },
-   })
+   }):layout()
 end
 
 local function editSpecialDisadvantagesButton()
-   return textButton({
+   return TextButton:new({
       lines = { 'ADD', 'SPECIAL', 'DISADVANTAGES' },
       backgroundOptions = {},
       events = {
@@ -388,22 +397,197 @@ local function editSpecialDisadvantagesButton()
          relativePosition = v2(0.75, 0.50),
          relativeSize = v2(0.25, 0.16),
       },
-   })
+   }):layout()
+end
+
+local function createReputationElement()
+   ui.showMessage('Changing reputation is not yet implemented!')
+   return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end
 
 local function editReputationButton()
-   return textButton({
+   return TextButton:new({
       lines = { 'EDIT', 'REPUTATION' },
       backgroundOptions = {},
       events = {
          focusChange = function() mainElement:update() end,
-         mouseClick = function() ui.showMessage('The "Edit Reputation" functionality is not supported yet') end,
+         mouseClick = createReputationElement,
       },
       props = {
          relativePosition = v2(0.75, 0.67),
          relativeSize = v2(0.25, 0.16),
       },
-   })
+   }):layout()
 end
 
 local function calculateSpecialsSkillMultiplier(cost)
@@ -465,11 +649,16 @@ local function applySpecials()
    removeExistingSpecials()
 
    print('Applying specials abilities')
+   nightlys = {}
    for _, advantage in ipairs(specials.advantages) do
       if advantage.abilityId then
          types.Actor.spells(self):add(advantage.abilityId)
       end
+      if advantage.abilityIdAtNight then
+         table.insert(nightlys, advantage)
+      end
    end
+   phobias = {}
    for _, disadvantage in ipairs(specials.disadvantages) do
       if disadvantage.abilityId then
          types.Actor.spells(self):add(disadvantage.abilityId)
@@ -483,6 +672,8 @@ local function applySpecials()
 
    specialsSkillMultiplier = calculateSpecialsSkillMultiplier(specials:cost())
    print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
+
+
 end
 
 local function createApplyElement()
@@ -520,7 +711,7 @@ local function createApplyElement()
       },
    })
    if enableApplyButton then
-      content:add(textButton({
+      content:add(TextButton:new({
          lines = { 'APPLY' },
          backgroundOptions = {
             color = rgb(0.1, 0, 0),
@@ -536,9 +727,9 @@ local function createApplyElement()
             relativePosition = v2(0.1, 0.6),
             relativeSize = v2(0.2, 0.3),
          },
-      }))
+      }):layout())
    end
-   content:add(textButton({
+   content:add(TextButton:new({
       lines = { 'EXIT' },
       backgroundOptions = {
          color = rgb(0.1, 0, 0),
@@ -551,8 +742,8 @@ local function createApplyElement()
          relativePosition = v2(0.4, 0.6),
          relativeSize = v2(0.2, 0.3),
       },
-   }))
-   content:add(textButton({
+   }):layout())
+   content:add(TextButton:new({
       lines = { 'GO BACK' },
       events = {
          focusChange = function() applyElement:update() end,
@@ -565,7 +756,7 @@ local function createApplyElement()
          relativePosition = v2(0.7, 0.6),
          relativeSize = v2(0.2, 0.3),
       },
-   }))
+   }):layout())
    applyElement = ui.create({
       layer = 'Windows',
       content = content,
@@ -579,7 +770,7 @@ local function createApplyElement()
 end
 
 local function exitButton()
-   return textButton({
+   return TextButton:new({
       lines = { 'EXIT' },
       backgroundOptions = {
          color = rgb(0.1, 0, 0),
@@ -595,7 +786,7 @@ local function exitButton()
          relativePosition = v2(0.825, 0.86),
          relativeSize = v2(0.10, 0.12),
       },
-   })
+   }):layout()
 end
 
 createMainElement = function()
@@ -651,6 +842,7 @@ local function onKeyPress(key)
       destroyMainElement()
       destroyEditElement()
       destroyApplyElement()
+      destroyReputationElement()
    elseif editElement and key.code == input.KEY.UpArrow then
       editElementChangeSelection(-1)
    elseif editElement and key.code == input.KEY.DownArrow then
@@ -667,7 +859,43 @@ local function onMouseWheel(vertical, _)
    editElementChangeSelection(-vertical)
 end
 
+local applyReputationChangesLastRun = 100000000
+local applyReputationChangesEvery = 5
+local function applyReputationChanges(dt)
+   applyReputationChangesLastRun = applyReputationChangesLastRun + dt
+   if applyReputationChangesLastRun < applyReputationChangesEvery then return end
+   applyReputationChangesLastRun = 0
+   for _, actor in ipairs(nearby.actors) do
+      if not types.NPC.objectIsInstance(actor) then return end
+      for _, factionId in ipairs(types.NPC.getFactions(actor)) do
+         if specials.reputation[factionId] then
+            actor:sendEvent('SpecialModifyDisposition', { toward = self.id, modifier = specials.reputation[factionId] })
+            break
+         end
+      end
+   end
+end
+
+local function applyNightlys(dt)
+   nightlysTimeSinceCheck = nightlysTimeSinceCheck + dt
+   if nightlysTimeSinceCheck < nightlysCheckEvery then return end
+   nightlysTimeSinceCheck = 0
+   local hour = core.getGameTime() % time.day
+   local isNight = hour < 21600 or hour >= 64800
+   print('hour:' .. tostring(hour) .. ' isNight:' .. tostring(isNight) .. ' checking ' .. tostring(#nightlys) .. ' nightly abilities')
+   for _, special in ipairs(nightlys) do
+      if isNight and not (types.Actor.spells(self))[special.abilityIdAtNight] then
+         types.Actor.spells(self):add(special.abilityIdAtNight)
+      elseif not isNight and (types.Actor.spells(self))[special.abilityIdAtNight] then
+         types.Actor.spells(self):remove(special.abilityIdAtNight)
+      end
+   end
+end
+
 local function onUpdate(dt)
+   applyReputationChanges(dt)
+   applyNightlys(dt)
+
    if not phobias then return end
 
    if types.Actor.activeSpells(self):isSpellActive('special_phobia') then
@@ -716,12 +944,17 @@ end
 
 local function onSave()
    return {
+      nightlys = nightlys,
       phobias = phobias,
+      reputation = specials.reputation,
       specialsSkillMultiplier = specialsSkillMultiplier,
    }
 end
 
 local function onLoad(data)
+   if data.nightlys then
+      nightlys = data.nightlys
+   end
    if data.specialsSkillMultiplier and data.specialsSkillMultiplier ~= 1 then
       specialsSkillMultiplier = data.specialsSkillMultiplier
       print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
@@ -729,6 +962,10 @@ local function onLoad(data)
    if data.phobias then
       phobias = data.phobias
    end
+   if data.reputation then
+      specials.reputation = data.reputation
+   end
+
 end
 
 return {

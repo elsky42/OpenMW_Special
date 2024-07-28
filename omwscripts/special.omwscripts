@@ -1,1 +1,2 @@
 PLAYER: scripts/special/special.lua
+NPC: scripts/special/change_disposition.lua

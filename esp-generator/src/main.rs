@@ -1,4 +1,4 @@
-use tes3::esp::{AttributeId2, Effect, EffectId2, FileType, FixedString, Header, ObjectFlags, Plugin, SkillId2, Spell, SpellData, SpellType, TES3Object};
+use tes3::esp::{AttributeId, AttributeId2, Effect, EffectId2, Faction, FactionData, FactionReaction, FactionRequirement, FileType, FixedString, Header, ObjectFlags, Plugin, SkillId, SkillId2, Spell, SpellData, SpellType, TES3Object};
 
 fn phobia() -> TES3Object {
     let mut effects = vec![];
@@ -46,6 +46,36 @@ fn phobia() -> TES3Object {
         name: Some("Phobia".to_owned()),
         data: Some(SpellData {
             kind: SpellType::Spell,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(effects),
+    })
+}
+
+fn night_person() -> TES3Object {
+    let mut effects = vec![];
+    for attribute in [AttributeId2::Intelligence,
+                      AttributeId2::Willpower,
+                      AttributeId2::Personality,
+                      AttributeId2::Agility] {
+        effects.push(Effect {
+            magic_effect: EffectId2::FortifyAttribute,
+            skill: SkillId2::None,
+            attribute,
+            range: 0,
+            area: 0,
+            duration: 0,
+            min_magnitude: 10,
+            max_magnitude: 10,
+        })
+    }
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_night_person".to_owned(),
+        name: Some("Night Person".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Ability,
             cost: 0,
             flags: 0,
         }),
@@ -204,29 +234,7 @@ fn main() {
     plugin.add_base_ability("Dodger", EffectId2::Sanctuary, 20);
 
     plugin.objects.push(phobia());
-
-    // plugin.objects.push(TES3Object::Spell(Spell {
-    //     flags: ObjectFlags::empty(),
-    //     id: "special_healthy".to_owned(),
-    //     name: Some("Healthy".to_owned()),
-    //     data: Some(SpellData {
-    //         kind: SpellType::Spell,
-    //         cost: 0,
-    //         flags: 0,
-    //     }),
-    //     effects: Some(vec![
-    //         Effect {
-    //             magic_effect: EffectId2::FortifyHealth,
-    //             skill: SkillId2::None,
-    //             attribute: AttributeId2::None,
-    //             range: 0,
-    //             area: 0,
-    //             duration: u32::MAX,
-    //             min_magnitude: 1,
-    //             max_magnitude: u32::MAX,
-    //         }
-    //     ]),
-    // }));
+    plugin.objects.push(night_person());
 
     plugin.save_path(output_file).unwrap()
 }

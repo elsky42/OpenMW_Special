@@ -82,7 +82,10 @@ global function textLines(options: TextLinesOptions): ui.Layout
         content:add {
             name = tostring(i),
             template = templates.textNormal,
-            props = { text = line }
+            props = {
+                text = line,
+                textColor = options.color,
+            }
         }
     end
     return {
@@ -101,6 +104,8 @@ global function textLines(options: TextLinesOptions): ui.Layout
 end
 
 global record TextButtonEvents
+    focusGain: function()
+    focusLoss: function()
     focusChange: function()
     mouseClick: function(event: ui.MouseEvent)
 end
@@ -108,39 +113,59 @@ end
 global record TextButtonProperties
     relativePosition: V2
     relativeSize: V2
+    size: V2
 end
 
 global record TextButtonOptions
     lines: {string}
+    normalTextColor: util.Color | nil
     backgroundOptions: BackgroundOptions | nil
     events: TextButtonEvents
     props: TextButtonProperties
 end
 
-global function textButton(options: TextButtonOptions): ui.Layout
-    local label = textLines { lines = options.lines }
-    local changeTextColor = function(color: util.Color)
-        for i, _ in ipairs(options.lines) do
-            lookupLayout(label, {tostring(i)}).props.textColor = color
-        end
-        if options.events.focusChange then options.events.focusChange() end
+global record TextButton
+    options: TextButtonOptions
+
+    textLines: ui.Layout
+end
+
+function TextButton:new(options: TextButtonOptions): TextButton
+    local self: TextButton = setmetatable({}, { __index = TextButton })
+    self.options = options
+    local unfocusedColor = options.normalTextColor or sandColor
+    self.textLines = textLines {
+        color = unfocusedColor,
+        lines = options.lines,
+    }
+    return self
+end
+
+function TextButton:changeTextColor(color: util.Color)
+    for i, _ in ipairs(self.options.lines) do
+        lookupLayout(self.textLines, {tostring(i)}).props.textColor = color
     end
+    if self.options.events.focusChange then self.options.events.focusChange() end
+end
+
+function TextButton:layout(): ui.Layout
     local content = ui.content {}
-    if options.backgroundOptions ~= nil then
-        content:add(background(options.backgroundOptions))
+    if self.options.backgroundOptions ~= nil then
+        content:add(background(self.options.backgroundOptions))
     end
     content:add(borders(true))
-    content:add(label)
+    content:add(self.textLines)
     local events = {}
-    events.focusGain = async:callback(function() changeTextColor(lightSandColor) end)
-    events.focusLoss = async:callback(function() changeTextColor(sandColor) end)
-    if options.events and options.events.mouseClick then
-        events.mouseClick = async:callback(options.events.mouseClick)
+    local unfocusedColor = self.options.normalTextColor or sandColor
+    events.focusGain = async:callback(self.options.events.focusGain or function() self:changeTextColor(lightSandColor) end)
+    events.focusLoss = async:callback(self.options.events.focusLoss or function() self:changeTextColor(unfocusedColor) end)
+    if self.options.events and self.options.events.mouseClick then
+        events.mouseClick = async:callback(self.options.events.mouseClick)
     end
     return {
         content = content,
         events = events,
-        props = options.props as table,
+        props = self.options.props as table,
     }
 end
 

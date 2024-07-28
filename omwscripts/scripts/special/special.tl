@@ -1,5 +1,3 @@
-local async = require('openmw.async')
-local auxUi = require('openmw_aux.ui')
 local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
@@ -7,10 +5,10 @@ local I = require('openmw.interfaces')
 local nearby = require('openmw.nearby')
 local self = require('openmw.self') as core.GameObject
 local storage = require('openmw.storage')
+local time = require('openmw_aux.time')
 local types = require('openmw.types')
 local ui = require('openmw.ui')
 local util = require('openmw.util')
-local utilAux = require('openmw_aux.util')
 local _conf = require('scripts.special.conf')
 local _widgets = require('scripts.special.widgets')
 local _ = require('scripts.special.settings')
@@ -19,17 +17,21 @@ local rgb = util.color.rgb
 local v2 = util.vector2
 local V2 = util.Vector2
 
-local specials: AdvantagesDisadvantages = nil
+local specials: AdvantagesDisadvantages = AdvantagesDisadvantages:new()
 local specialsSkillMultiplier: number = 1
 local phobias: {Special} = {}
 local phobiaCheckEvery: number = 2
 local phobiaTimeSinceCheck: number = 0
 local phobiaTimeSinceLastTriggerred: number = 0
+local nightlys: {Special} = {}
+local nightlysCheckEvery: number = 10
+local nightlysTimeSinceCheck: number = 10000000
 local mainElement: ui.Element = nil 
 local createMainElement: function() = nil
 local editElement: ui.Element = nil
 local editElementChangeSelection: function(integer) = nil
 local applyElement: ui.Element = nil
+local reputationElement: ui.Element = nil
 
 local settings = storage.playerSection('special_settings')
 
@@ -52,6 +54,13 @@ local function destroyApplyElement()
     if not applyElement then return end
     applyElement:destroy()
     applyElement = nil
+    I.UI.setMode()
+end
+
+local function destroyReputationElement()
+    if not reputationElement then return end
+    reputationElement:destroy()
+    reputationElement = nil
     I.UI.setMode()
 end
 
@@ -223,12 +232,12 @@ local function secondColumn(): ui.Layout
     }
 end
 
-local function updateHitPointsText()
-    local text = lookupLayout(mainElement.layout, {'hitPoints', 'boxedHitPoints', 'flex', '1'})
-    text.props.text = tostring(specials.maxHp)
-end
+-- local function updateHitPointsText()
+--     local text = lookupLayout(mainElement.layout, {'hitPoints', 'boxedHitPoints', 'flex', '1'})
+--     text.props.text = tostring(specials.maxHp)
+-- end
 
-local function changeHitPoints(diff: number)
+local function changeHitPoints(_: number)
     ui.showMessage('Changing hit points is not supported yet')
 
     -- if specials.maxHp == math.max(-30, math.min(30, specials.maxHp + diff)) then return end
@@ -248,7 +257,7 @@ local function hitPoint(): ui.Layout
         relativePosition = v2(0.1, 0.01),
         relativeSize = v2(0.8, 0.49),
     })
-    content:add(textButton {
+    content:add(TextButton:new {
         lines = {'+'},
         events = {
             focusChange = function() mainElement:update() end,
@@ -258,8 +267,8 @@ local function hitPoint(): ui.Layout
             relativePosition = v2(0.1, 0.5),
             relativeSize = v2(0.1, 0.2),
         }
-    })
-    content:add(textButton {
+    }:layout())
+    content:add(TextButton:new {
         lines = {'-'},
         events = {
             focusChange = function() mainElement:update() end,
@@ -269,7 +278,7 @@ local function hitPoint(): ui.Layout
             relativePosition = v2(0.1, 0.7),
             relativeSize = v2(0.1, 0.2),
         }
-    })
+    }:layout())
     content:add {
         name = 'boxedHitPoints',
         content = ui.content {
@@ -324,7 +333,7 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
     content:add(background {})
     content:add(borders(true))
     content:add(scrollable:layout())
-    content:add(textButton {
+    content:add(TextButton:new {
         lines = {'EXIT'},
         backgroundOptions = {
             color = rgb(0.1, 0, 0),
@@ -340,7 +349,7 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
             relativePosition = v2(0.8, 0.8),
             relativeSize = v2(0.15, 0.15),
         }
-    })
+    }:layout())
     editElement = ui.create {
         layer = 'Windows',
         content = content,
@@ -362,7 +371,7 @@ local function openAddDisadvantagesWindow()
 end
 
 local function editSpecialAdvantagesButton(): ui.Layout
-    return textButton {
+    return TextButton:new {
         lines = {'ADD', 'SPECIAL', 'ADVANTAGES'},
         backgroundOptions = {},
         events = {
@@ -373,11 +382,11 @@ local function editSpecialAdvantagesButton(): ui.Layout
             relativePosition = v2(0.75, 0.33),
             relativeSize = v2(0.25, 0.16),
         },
-    }
+    }:layout()
 end
 
 local function editSpecialDisadvantagesButton(): ui.Layout
-    return textButton {
+    return TextButton:new {
         lines = {'ADD', 'SPECIAL', 'DISADVANTAGES'},
         backgroundOptions = {},
         events = {
@@ -388,22 +397,197 @@ local function editSpecialDisadvantagesButton(): ui.Layout
             relativePosition = v2(0.75, 0.50),
             relativeSize = v2(0.25, 0.16),
         },
-    }
+    }:layout()
+end
+
+local function createReputationElement()
+    ui.showMessage('Changing reputation is not yet implemented!')
+    return
+    -- destroyMainElement()
+    -- local content = ui.content {}
+    -- content:add(background {})
+    -- content:add(borders(true))
+    -- local flexContent = ui.content {}
+    -- local badColor = util.color.hex('a80000')
+    -- local goodColor = util.color.hex('6da33b')
+    -- local costLabel = {
+    --     template = templates.textNormal,
+    --     props = {
+    --         relativePosition = v2(0.3, 0.9),
+    --         text = 'cost: 0',
+    --     },
+    -- }
+    -- local cost: number = 0
+    -- local function modCost(offset: number)
+    --     cost = cost + offset
+    --     costLabel.props.text = 'cost: ' .. tostring(cost)
+    -- end
+    -- for _, factionId in ipairs({
+    --     'redoran',
+    --     'hlaalu',
+    --     'telvanni',
+    --     'thieves guild',
+    --     'fighters guild',
+    --     'mages guild',
+    --     'temple',
+    --     'imperial cult',
+    --     'camonna tong',
+    --     'morag tong',
+    --     'ashlanders',
+    --     'blades',
+    --     'imperial legion',
+    --     'east empire company',
+    -- }) do
+    --     local faction = (core.factions.records as {string:core.FactionRecord})[factionId]
+    --     assert(faction)
+    --     specials.reputation[faction.id] = specials.reputation[faction.id] or 0
+    --     local badButton: TextButton
+    --     local neutralButton: TextButton
+    --     local goodButton: TextButton
+    --     badButton = TextButton:new {
+    --         lines = {'BAD'},
+    --         normalTextColor = specials.reputation[faction.id] < 0 and badColor or sandColor,
+    --         events = {
+    --             focusGain = function() end,
+    --             focusLoss = function() end,
+    --             focusChange = function() reputationElement:update() end,
+    --             mouseClick = function()
+    --                 if specials.reputation[faction.id] < 0 then return end
+    --                 local other = specials.reputation[faction.id] > 0 and goodButton or neutralButton
+    --                 modCost(specials.reputation[faction.id] > 0 and -reputationCost*2 or -reputationCost)
+    --                 specials.reputation[faction.id] = -20
+    --                 other:changeTextColor(sandColor)
+    --                 badButton:changeTextColor(badColor)
+    --                 reputationElement:update()
+    --             end,
+    --         },
+    --         props = {
+    --             relativeSize = v2(0.19, 0),
+    --             size = v2(0, templates.textNormal.props.textSize as number + 4),
+    --         },
+    --     }
+    --     neutralButton = TextButton:new {
+    --         lines = {'NEUTRAL'},
+    --         normalTextColor = specials.reputation[faction.id] == 0 and lightSandColor or sandColor,
+    --         events = {
+    --             focusGain = function() end,
+    --             focusLoss = function() end,
+    --             focusChange = function() reputationElement:update() end,
+    --             mouseClick = function()
+    --                 if specials.reputation[faction.id] == 0 then return end
+    --                 local other = specials.reputation[faction.id] < 0 and badButton or goodButton
+    --                 modCost(specials.reputation[faction.id] < 0 and reputationCost or -reputationCost)
+    --                 specials.reputation[faction.id] = 0
+    --                 other:changeTextColor(sandColor)
+    --                 neutralButton:changeTextColor(lightSandColor)
+    --                 reputationElement:update()
+    --             end,
+    --         },
+    --         props = {
+    --             relativeSize = v2(0.19, 0),
+    --             size = v2(0, templates.textNormal.props.textSize as number + 4),
+    --         },
+    --     }
+    --     goodButton = TextButton:new {
+    --         lines = {'GOOD'},
+    --         normalTextColor = specials.reputation[faction.id] > 0 and goodColor or sandColor,
+    --         events = {
+    --             focusGain = function() end,
+    --             focusLoss = function() end,
+    --             focusChange = function() reputationElement:update() end,
+    --             mouseClick = function()
+    --                 if specials.reputation[faction.id] > 0 then return end
+    --                 local other = specials.reputation[faction.id] < 0 and badButton or neutralButton
+    --                 modCost(specials.reputation[faction.id] < 0 and reputationCost*2 or reputationCost)
+    --                 specials.reputation[faction.id] = 20
+    --                 other:changeTextColor(sandColor)
+    --                 goodButton:changeTextColor(goodColor)
+    --                 reputationElement:update()
+    --             end,
+    --         },
+    --         props = {
+    --             relativeSize = v2(0.19, 0),
+    --             size = v2(0, templates.textNormal.props.textSize as number + 4),
+    --         },
+    --     }
+    --     flexContent:add {
+    --         type = ui.TYPE.Flex,
+    --         content = ui.content {
+    --             {
+    --                 template = templates.textNormal,
+    --                 props = {
+    --                     autoSize = false,
+    --                     text = faction.name,
+    --                     relativeSize = v2(0.4, 0),
+    --                     size = v2(0, templates.textNormal.props.textSize as number),
+    --                 },
+    --             },
+    --             badButton:layout(),
+    --             neutralButton:layout(),
+    --             goodButton:layout(),
+    --         },
+    --         props = {
+    --             -- align = ui.ALIGNMENT.Center,
+    --             -- arrange = ui.ALIGNMENT.Center,
+    --             autoSize = false,
+    --             horizontal = true,
+    --             relativeSize = v2(1, 0),
+    --             size = v2(0, templates.textNormal.props.textSize as number + 6),
+    --         }
+    --     }
+    -- end
+
+    -- content:add {
+    --     type = ui.TYPE.Flex,
+    --     content = flexContent,
+    --     props = {
+    --         autoSize = false,
+    --         relativePosition = v2(0.05, 0.05),
+    --         relativeSize = v2(0.9, 0.8),
+    --     },
+    -- }
+
+    -- content:add(costLabel)
+
+    -- content:add(TextButton:new {
+    --     lines = {'EXIT'},
+    --     events = {
+    --         focusChange = function() reputationElement:update() end,
+    --         mouseClick = function()
+    --             destroyReputationElement()
+    --             createMainElement()
+    --         end,
+    --     },
+    --     props = {
+    --         relativePosition = v2(0.78, 0.88),
+    --         relativeSize = v2(0.2, 0.1),
+    --     },
+    -- }:layout())
+    -- reputationElement = ui.create {
+    --     layer = 'Windows',
+    --     content = content,
+    --     props = {
+    --         anchor = v2(0.5, 0.5),
+    --         relativePosition = v2(0.5, 0.5),
+    --         relativeSize = v2(0.6, 0.8),
+    --     },
+    -- }
+    -- I.UI.setMode('Interface', {windows = {}})
 end
 
 local function editReputationButton(): ui.Layout
-    return textButton {
+    return TextButton:new {
         lines = {'EDIT', 'REPUTATION'},
         backgroundOptions = {},
         events = {
             focusChange = function() mainElement:update() end,
-            mouseClick = function() ui.showMessage('The "Edit Reputation" functionality is not supported yet') end,
+            mouseClick = createReputationElement,
         },
         props = {
             relativePosition = v2(0.75, 0.67),
             relativeSize = v2(0.25, 0.16),
         },
-    }
+    }:layout()
 end
 
 local function calculateSpecialsSkillMultiplier(cost: number): number
@@ -465,11 +649,16 @@ local function applySpecials()
     removeExistingSpecials()
 
     print('Applying specials abilities')
+    nightlys = {}
     for _, advantage in ipairs(specials.advantages) do
         if advantage.abilityId then
             types.Actor.spells(self):add(advantage.abilityId)
         end
+        if advantage.abilityIdAtNight then
+            table.insert(nightlys, advantage)
+        end
     end
+    phobias = {}
     for _, disadvantage in ipairs(specials.disadvantages) do
         if disadvantage.abilityId then
             types.Actor.spells(self):add(disadvantage.abilityId)
@@ -483,6 +672,8 @@ local function applySpecials()
 
     specialsSkillMultiplier = calculateSpecialsSkillMultiplier(specials:cost())
     print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
+
+
 end
 
 local function createApplyElement()
@@ -520,7 +711,7 @@ local function createApplyElement()
         }
     }
     if enableApplyButton then
-        content:add(textButton {
+        content:add(TextButton:new {
             lines = {'APPLY'},
             backgroundOptions = {
                 color = rgb(0.1, 0, 0),
@@ -536,9 +727,9 @@ local function createApplyElement()
                 relativePosition = v2(0.1, 0.6),
                 relativeSize = v2(0.2, 0.3),
             },
-        })
+        }:layout())
     end
-    content:add(textButton {
+    content:add(TextButton:new {
         lines = {'EXIT'},
         backgroundOptions = {
             color = rgb(0.1, 0, 0),
@@ -551,8 +742,8 @@ local function createApplyElement()
             relativePosition = v2(0.4, 0.6),
             relativeSize = v2(0.2, 0.3),
         },
-    })
-    content:add(textButton {
+    }:layout())
+    content:add(TextButton:new {
         lines = {'GO BACK'},
         events = {
             focusChange = function() applyElement:update() end,
@@ -565,7 +756,7 @@ local function createApplyElement()
             relativePosition = v2(0.7, 0.6),
             relativeSize = v2(0.2, 0.3),
         },
-    })
+    }:layout())
     applyElement = ui.create {
         layer = 'Windows',
         content = content,
@@ -579,7 +770,7 @@ local function createApplyElement()
 end
 
 local function exitButton(): ui.Layout
-    return textButton {
+    return TextButton:new {
         lines = {'EXIT'},
         backgroundOptions = {
             color = rgb(0.1, 0, 0),
@@ -595,7 +786,7 @@ local function exitButton(): ui.Layout
             relativePosition = v2(0.825, 0.86),
             relativeSize = v2(0.10, 0.12),
         },
-    }
+    }:layout()
 end
 
 createMainElement = function()
@@ -651,12 +842,14 @@ local function onKeyPress(key: input.KeyboardEvent)
         destroyMainElement()
         destroyEditElement()
         destroyApplyElement()
+        destroyReputationElement()
     elseif editElement and key.code == input.KEY.UpArrow then
         editElementChangeSelection(-1)
     elseif editElement and key.code == input.KEY.DownArrow then
         editElementChangeSelection(1)
     elseif editElement and key.code == input.KEY.Enter then
         -- TODO
+    elseif key.code == input.KEY.Y then
 
     end
 end
@@ -666,7 +859,43 @@ local function onMouseWheel(vertical: integer, _)
     editElementChangeSelection(-vertical)
 end
 
+local applyReputationChangesLastRun: number = 100000000
+local applyReputationChangesEvery: number = 5
+local function applyReputationChanges(dt: number)
+    applyReputationChangesLastRun = applyReputationChangesLastRun + dt
+    if applyReputationChangesLastRun < applyReputationChangesEvery then return end
+    applyReputationChangesLastRun = 0
+    for _, actor in ipairs(nearby.actors) do
+        if not types.NPC.objectIsInstance(actor) then return end
+        for _, factionId in ipairs(types.NPC.getFactions(actor)) do
+            if specials.reputation[factionId] then
+                actor:sendEvent('SpecialModifyDisposition', {toward=self.id, modifier=specials.reputation[factionId]})
+                break
+            end
+        end
+    end
+end
+
+local function applyNightlys(dt: number)
+    nightlysTimeSinceCheck = nightlysTimeSinceCheck + dt
+    if nightlysTimeSinceCheck < nightlysCheckEvery then return end
+    nightlysTimeSinceCheck = 0
+    local hour = core.getGameTime() % time.day as number
+    local isNight = hour < 21600 or hour >= 64800
+    print('hour:' .. tostring(hour) .. ' isNight:' .. tostring(isNight) .. ' checking ' .. tostring(#nightlys) .. ' nightly abilities')
+    for _, special in ipairs(nightlys) do
+        if isNight and not (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdAtNight] then
+            types.Actor.spells(self):add(special.abilityIdAtNight)
+        elseif not isNight and (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdAtNight] then
+            types.Actor.spells(self):remove(special.abilityIdAtNight)
+        end
+    end
+end
+
 local function onUpdate(dt: number)
+    applyReputationChanges(dt)
+    applyNightlys(dt)
+
     if not phobias then return end
 
     if types.Actor.activeSpells(self):isSpellActive('special_phobia') then
@@ -715,12 +944,17 @@ end
 
 local function onSave(): table
     return {
+        nightlys = nightlys,
         phobias = phobias,
+        reputation = specials.reputation,
         specialsSkillMultiplier = specialsSkillMultiplier,
     }
 end
 
 local function onLoad(data: table)
+    if data.nightlys then
+        nightlys = data.nightlys as {Special}
+    end
     if data.specialsSkillMultiplier and data.specialsSkillMultiplier ~= 1 then
         specialsSkillMultiplier = data.specialsSkillMultiplier as number
         print('Applying specials skill multiplier ' .. tostring(specialsSkillMultiplier))
@@ -728,6 +962,10 @@ local function onLoad(data: table)
     if data.phobias then
         phobias = data.phobias as {Special}
     end
+    if data.reputation then
+        specials.reputation = data.reputation as {string:number}
+    end
+    
 end
 
 return {

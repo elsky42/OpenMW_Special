@@ -82,7 +82,10 @@ function textLines(options)
       content:add({
          name = tostring(i),
          template = templates.textNormal,
-         props = { text = line },
+         props = {
+            text = line,
+            textColor = options.color,
+         },
       })
    end
    return {
@@ -105,7 +108,10 @@ TextButtonEvents = {}
 
 
 
+
+
 TextButtonProperties = {}
+
 
 
 
@@ -117,30 +123,49 @@ TextButtonOptions = {}
 
 
 
-function textButton(options)
-   local label = textLines({ lines = options.lines })
-   local changeTextColor = function(color)
-      for i, _ in ipairs(options.lines) do
-         lookupLayout(label, { tostring(i) }).props.textColor = color
-      end
-      if options.events.focusChange then options.events.focusChange() end
+
+TextButton = {}
+
+
+
+
+
+function TextButton:new(options)
+   local self = setmetatable({}, { __index = TextButton })
+   self.options = options
+   local unfocusedColor = options.normalTextColor or sandColor
+   self.textLines = textLines({
+      color = unfocusedColor,
+      lines = options.lines,
+   })
+   return self
+end
+
+function TextButton:changeTextColor(color)
+   for i, _ in ipairs(self.options.lines) do
+      lookupLayout(self.textLines, { tostring(i) }).props.textColor = color
    end
+   if self.options.events.focusChange then self.options.events.focusChange() end
+end
+
+function TextButton:layout()
    local content = ui.content({})
-   if options.backgroundOptions ~= nil then
-      content:add(background(options.backgroundOptions))
+   if self.options.backgroundOptions ~= nil then
+      content:add(background(self.options.backgroundOptions))
    end
    content:add(borders(true))
-   content:add(label)
+   content:add(self.textLines)
    local events = {}
-   events.focusGain = async:callback(function() changeTextColor(lightSandColor) end)
-   events.focusLoss = async:callback(function() changeTextColor(sandColor) end)
-   if options.events and options.events.mouseClick then
-      events.mouseClick = async:callback(options.events.mouseClick)
+   local unfocusedColor = self.options.normalTextColor or sandColor
+   events.focusGain = async:callback(self.options.events.focusGain or function() self:changeTextColor(lightSandColor) end)
+   events.focusLoss = async:callback(self.options.events.focusLoss or function() self:changeTextColor(unfocusedColor) end)
+   if self.options.events and self.options.events.mouseClick then
+      events.mouseClick = async:callback(self.options.events.mouseClick)
    end
    return {
       content = content,
       events = events,
-      props = options.props,
+      props = self.options.props,
    }
 end
 
