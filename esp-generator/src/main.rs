@@ -83,6 +83,70 @@ fn night_person() -> TES3Object {
     })
 }
 
+fn good_natured() -> TES3Object {
+    let mut effects = vec![];
+    for skill in [SkillId2::Spear,
+                  SkillId2::Axe,
+                  SkillId2::BluntWeapon,
+                  SkillId2::LongBlade,
+                  SkillId2::Marksman,
+                  SkillId2::HandToHand,
+                  SkillId2::ShortBlade,
+                  SkillId2::Mysticism,
+                  SkillId2::Destruction] {
+        effects.push(Effect {
+            magic_effect: EffectId2::DrainSkill,
+            skill,
+            attribute: AttributeId2::None,
+            range: 0,
+            area: 0,
+            duration: 0,
+            min_magnitude: 10,
+            max_magnitude: 10,
+        });
+    }
+    for skill in [SkillId2::HeavyArmor,
+                  SkillId2::MediumArmor,
+                  SkillId2::Acrobatics,
+                  SkillId2::Armorer,
+                  SkillId2::Block,
+                  SkillId2::LightArmor,
+                  SkillId2::Sneak,
+                  SkillId2::Athletics,
+                  SkillId2::Unarmored,
+                  SkillId2::Mercantile,
+                  SkillId2::Speechcraft,
+                  SkillId2::Illusion,
+                  SkillId2::Alchemy,
+                  SkillId2::Conjuration,
+                  SkillId2::Enchant,
+                  SkillId2::Security,
+                  SkillId2::Alteration,
+                  SkillId2::Restoration] {
+        effects.push(Effect {
+            magic_effect: EffectId2::FortifySkill,
+            skill,
+            attribute: AttributeId2::None,
+            range: 0,
+            area: 0,
+            duration: 0,
+            min_magnitude: 5,
+            max_magnitude: 5,
+        });
+    }
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_good_natured".to_owned(),
+        name: Some("Good Natured".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Ability,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(effects)
+    })
+}
+
 fn ability<S: Into<String>>(name: S, magic_effect: EffectId2, skill: SkillId2, attribute: AttributeId2, magnitude: u32) -> TES3Object {
     let name = name.into();
     let id = "special_".to_owned() + &name.to_lowercase().replace(" ", "_");
@@ -235,6 +299,7 @@ fn main() {
 
     plugin.objects.push(phobia());
     plugin.objects.push(night_person());
+    plugin.objects.push(good_natured());
 
     plugin.save_path(output_file).unwrap()
 }

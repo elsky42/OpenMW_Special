@@ -882,7 +882,6 @@ local function applyNightlys(dt: number)
     nightlysTimeSinceCheck = 0
     local hour = core.getGameTime() % time.day as number
     local isNight = hour < 21600 or hour >= 64800
-    print('hour:' .. tostring(hour) .. ' isNight:' .. tostring(isNight) .. ' checking ' .. tostring(#nightlys) .. ' nightly abilities')
     for _, special in ipairs(nightlys) do
         if isNight and not (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdAtNight] then
             types.Actor.spells(self):add(special.abilityIdAtNight)

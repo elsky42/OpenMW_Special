@@ -433,9 +433,16 @@ addSpecial({
 
 addSpecial({
    id = 'night_person',
-   name = 'Night Person (+10 AGI/INT/WIL/CHA at night)',
+   name = 'Night Person (+10 AG/IN/WI/CH at night)',
    abilityIdAtNight = 'special_night_person',
    cost = 10,
+})
+
+addSpecial({
+   id = 'good_natured',
+   name = 'Good Natured',
+   abilityId = 'special_good_natured',
+   cost = 0,
 })
 
 AdvantagesDisadvantages = {}
