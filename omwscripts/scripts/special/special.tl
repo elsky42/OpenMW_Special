@@ -24,8 +24,11 @@ local phobiaCheckEvery: number = 2
 local phobiaTimeSinceCheck: number = 0
 local phobiaTimeSinceLastTriggerred: number = 0
 local nightlys: {Special} = {}
-local nightlysCheckEvery: number = 10
+local nightlysCheckEvery: number = 5
 local nightlysTimeSinceCheck: number = 10000000
+local insidesOutsides: {Special} = {}
+local insidesCheckEvery: number = 5
+local insidesTimeSinceCheck: number = 100000
 local mainElement: ui.Element = nil 
 local createMainElement: function() = nil
 local editElement: ui.Element = nil
@@ -657,11 +660,20 @@ local function applySpecials()
         if advantage.abilityIdAtNight then
             table.insert(nightlys, advantage)
         end
+        if advantage.abilityIdWhenInside or advantage.abilityIdWhenOutside then
+            table.insert(insidesOutsides, advantage)
+        end
     end
     phobias = {}
     for _, disadvantage in ipairs(specials.disadvantages) do
         if disadvantage.abilityId then
             types.Actor.spells(self):add(disadvantage.abilityId)
+        end
+        if disadvantage.abilityIdAtNight then
+            table.insert(nightlys, disadvantage)
+        end
+        if disadvantage.abilityIdWhenInside or disadvantage.abilityIdWhenOutside then
+            table.insert(insidesOutsides, disadvantage)
         end
 
         local phobiaOf = disadvantage.phobiaOf
@@ -891,9 +903,33 @@ local function applyNightlys(dt: number)
     end
 end
 
+local function applyInsidesOutsides(dt: number)
+    insidesTimeSinceCheck = insidesTimeSinceCheck + dt
+    if insidesTimeSinceCheck < insidesCheckEvery then return end
+    insidesTimeSinceCheck = 0
+    for _, special in ipairs(insidesOutsides) do
+        if self.cell.isExterior then
+            if special.abilityIdWhenInside and (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdWhenInside] then
+                types.Actor.spells(self):remove(special.abilityIdWhenInside)
+            end
+            if special.abilityIdWhenOutside and not (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdWhenOutside] then
+                types.Actor.spells(self):add(special.abilityIdWhenOutside)
+            end
+        else
+            if special.abilityIdWhenInside and not (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdWhenInside] then
+                types.Actor.spells(self):add(special.abilityIdWhenInside)
+            end
+            if special.abilityIdWhenOutside and (types.Actor.spells(self) as {string:core.Spell})[special.abilityIdWhenOutside] then
+                types.Actor.spells(self):remove(special.abilityIdWhenOutside)
+            end
+        end
+    end
+end
+
 local function onUpdate(dt: number)
     applyReputationChanges(dt)
     applyNightlys(dt)
+    applyInsidesOutsides(dt)
 
     if not phobias then return end
 
@@ -943,6 +979,7 @@ end
 
 local function onSave(): table
     return {
+        insidesOutsides = insidesOutsides,
         nightlys = nightlys,
         phobias = phobias,
         reputation = specials.reputation,
@@ -951,6 +988,9 @@ local function onSave(): table
 end
 
 local function onLoad(data: table)
+    if data.insidesOutsides then
+        insidesOutsides = insidesOutsides as {Special}
+    end
     if data.nightlys then
         nightlys = data.nightlys as {Special}
     end

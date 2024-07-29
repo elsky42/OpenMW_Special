@@ -26,6 +26,12 @@ Special = {}
 
 
 
+
+
+
+
+
+
 function Special:new(special)
    assert(special)
    local self = setmetatable(special, { __index = Special })
@@ -38,6 +44,8 @@ function Special:copy()
    copy.name = self.name
    copy.abilityId = self.abilityId
    copy.abilityIdAtNight = self.abilityIdAtNight
+   copy.abilityIdWhenOutside = self.abilityIdWhenOutside
+   copy.abilityIdWhenInside = self.abilityIdWhenInside
    local phobiaOf = self.phobiaOf
    if type(phobiaOf) == "table" then
       for _, phobia in ipairs(phobiaOf) do
@@ -449,6 +457,14 @@ addSpecial({
    id = 'small_frame',
    name = 'Small Frame',
    abilityId = 'special_small_frame',
+   cost = 0,
+})
+
+addSpecial({
+   id = 'claustrophobia',
+   name = 'Claustrophobia',
+   abilityIdWhenInside = 'special_claustrophobia_inside',
+   abilityIdWhenOutside = 'special_claustrophibia_outside',
    cost = 0,
 })
 

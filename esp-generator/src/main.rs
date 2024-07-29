@@ -182,6 +182,74 @@ fn small_frame() -> TES3Object {
     })
 }
 
+fn claustrophobia_outside() -> TES3Object {
+    let mut effects = vec![];
+    for attribute in [AttributeId2::Agility,
+                      AttributeId2::Endurance,
+                      AttributeId2::Intelligence,
+                      AttributeId2::Luck,
+                      AttributeId2::Personality,
+                      AttributeId2::Speed,
+                      AttributeId2::Strength,
+                      AttributeId2::Willpower] {
+        effects.push(Effect {
+            magic_effect: EffectId2::FortifyAttribute,
+            skill: SkillId2::None,
+            attribute,
+            range: 0,
+            area: 0,
+            duration: 0,
+            min_magnitude: 10,
+            max_magnitude: 10,
+        })
+    }
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_claustrophobia_outside".to_owned(),
+        name: Some("Claustrophobia (Outside)".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Ability,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(effects),
+    })
+}
+
+fn claustrophobia_inside() -> TES3Object {
+    let mut effects = vec![];
+    for attribute in [AttributeId2::Agility,
+                      AttributeId2::Endurance,
+                      AttributeId2::Intelligence,
+                      AttributeId2::Luck,
+                      AttributeId2::Personality,
+                      AttributeId2::Speed,
+                      AttributeId2::Strength,
+                      AttributeId2::Willpower] {
+        effects.push(Effect {
+            magic_effect: EffectId2::DrainAttribute,
+            skill: SkillId2::None,
+            attribute,
+            range: 0,
+            area: 0,
+            duration: 0,
+            min_magnitude: 10,
+            max_magnitude: 10,
+        })
+    }
+    TES3Object::Spell(Spell {
+        flags: ObjectFlags::empty(),
+        id: "special_claustrophobia_inside".to_owned(),
+        name: Some("Claustrophobia (Inside)".to_owned()),
+        data: Some(SpellData {
+            kind: SpellType::Ability,
+            cost: 0,
+            flags: 0,
+        }),
+        effects: Some(effects),
+    })
+}
+
 fn ability<S: Into<String>>(name: S, magic_effect: EffectId2, skill: SkillId2, attribute: AttributeId2, magnitude: u32) -> TES3Object {
     let name = name.into();
     let id = "special_".to_owned() + &name.to_lowercase().replace(" ", "_");
@@ -278,21 +346,21 @@ fn main() {
     }
 
     plugin.add_attr_ability("Robust", EffectId2::FortifyAttribute, AttributeId2::Endurance, 10);
-    plugin.add_attr_ability("Fragile", EffectId2::DamageAttribute, AttributeId2::Endurance, 10);
+    plugin.add_attr_ability("Fragile", EffectId2::DrainAttribute, AttributeId2::Endurance, 10);
     plugin.add_attr_ability("Strong", EffectId2::FortifyAttribute, AttributeId2::Strength, 10);
-    plugin.add_attr_ability("Weak", EffectId2::DamageAttribute, AttributeId2::Strength, 10);
+    plugin.add_attr_ability("Weak", EffectId2::DrainAttribute, AttributeId2::Strength, 10);
     plugin.add_attr_ability("Agile", EffectId2::FortifyAttribute, AttributeId2::Agility, 10);
-    plugin.add_attr_ability("Clumsy", EffectId2::DamageAttribute, AttributeId2::Agility, 10);
+    plugin.add_attr_ability("Clumsy", EffectId2::DrainAttribute, AttributeId2::Agility, 10);
     plugin.add_attr_ability("Fast", EffectId2::FortifyAttribute, AttributeId2::Speed, 10);
-    plugin.add_attr_ability("Slow", EffectId2::DamageAttribute, AttributeId2::Speed, 10);
+    plugin.add_attr_ability("Slow", EffectId2::DrainAttribute, AttributeId2::Speed, 10);
     plugin.add_attr_ability("Charismatic", EffectId2::FortifyAttribute, AttributeId2::Personality, 10);
-    plugin.add_attr_ability("Uncharismatic", EffectId2::DamageAttribute, AttributeId2::Personality, 10);
+    plugin.add_attr_ability("Uncharismatic", EffectId2::DrainAttribute, AttributeId2::Personality, 10);
     plugin.add_attr_ability("Intelligent", EffectId2::FortifyAttribute, AttributeId2::Intelligence, 10);
-    plugin.add_attr_ability("Stupid", EffectId2::DamageAttribute, AttributeId2::Intelligence, 10);
+    plugin.add_attr_ability("Stupid", EffectId2::DrainAttribute, AttributeId2::Intelligence, 10);
     plugin.add_attr_ability("Resolute", EffectId2::FortifyAttribute, AttributeId2::Willpower, 10);
-    plugin.add_attr_ability("Irresolute", EffectId2::DamageAttribute, AttributeId2::Willpower, 10);
+    plugin.add_attr_ability("Irresolute", EffectId2::DrainAttribute, AttributeId2::Willpower, 10);
     plugin.add_attr_ability("Lucky", EffectId2::FortifyAttribute, AttributeId2::Luck, 10);
-    plugin.add_attr_ability("Unlucky", EffectId2::DamageAttribute, AttributeId2::Luck, 10);
+    plugin.add_attr_ability("Unlucky", EffectId2::DrainAttribute, AttributeId2::Luck, 10);
 
     plugin.add_base_ability("Regenerative", EffectId2::RestoreHealth, 1);
     plugin.add_base_ability("Relentless", EffectId2::RestoreFatigue, 4);
@@ -336,6 +404,8 @@ fn main() {
     plugin.objects.push(night_person());
     plugin.objects.push(good_natured());
     plugin.objects.push(small_frame());
+    plugin.objects.push(claustrophobia_outside());
+    plugin.objects.push(claustrophobia_inside());
 
     plugin.save_path(output_file).unwrap()
 }

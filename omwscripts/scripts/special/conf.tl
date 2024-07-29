@@ -19,6 +19,12 @@ global record Special
     -- Same as abilityId but applies only at night
     abilityIdAtNight: string | nil
 
+    -- Same as abilityId but applies only when outside
+    abilityIdWhenOutside: string | nil
+
+    -- Same as abilityId but applies only when inside
+    abilityIdWhenInside: string | nil
+
     -- The potentially multiple patterns that
     -- the id has to match to trigger a phobia
     phobiaOf: {string} | nil
@@ -38,6 +44,8 @@ function Special:copy(): Special
     copy.name = self.name
     copy.abilityId = self.abilityId
     copy.abilityIdAtNight = self.abilityIdAtNight
+    copy.abilityIdWhenOutside = self.abilityIdWhenOutside
+    copy.abilityIdWhenInside = self.abilityIdWhenInside
     local phobiaOf = self.phobiaOf
     if phobiaOf is {string} then
         for _, phobia in ipairs(phobiaOf) do
@@ -449,6 +457,14 @@ addSpecial {
     id = 'small_frame',
     name = 'Small Frame',
     abilityId = 'special_small_frame',
+    cost = 0,
+}
+
+addSpecial {
+    id = 'claustrophobia',
+    name = 'Claustrophobia',
+    abilityIdWhenInside = 'special_claustrophobia_inside',
+    abilityIdWhenOutside = 'special_claustrophibia_outside',
     cost = 0,
 }
 
