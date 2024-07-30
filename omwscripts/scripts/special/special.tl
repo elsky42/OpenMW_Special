@@ -1,3 +1,4 @@
+local async = require('openmw.async')
 local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
@@ -305,16 +306,24 @@ end
 
 local function createEditElement(availableSpecials: {Special}, add: function(Special))
     destroyMainElement()
-    local names = {}
+    local toGroup: {Grouppable} = {}
     for _, special in ipairs(availableSpecials) do
-        table.insert(names, special.name .. ' [' .. tostring(special.cost) .. ' points]')
+        table.insert(toGroup, {
+            layout = {
+                template = templates.textNormal,
+                props = { text = special.name },
+            }  as ui.Layout,
+            group = special.group,
+            data = special,
+        })
     end
-    local scrollable: ScrollableTextLines
-    scrollable = ScrollableTextLines:new {
-        lines = names,
+    local items = group(toGroup)
+    local scrollable: ScrollableGroups
+    scrollable = ScrollableGroups:new {
+        items = items,
         events = {
-            mouseDoubleClick = function(i: number)
-                    add(availableSpecials[i as integer])
+            mouseDoubleClickNonGroup = function(item: Expandable)
+                    add(item.data as Special)
                     destroyEditElement()
                     createMainElement()
                 end,
@@ -327,8 +336,8 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
     }
     editElementChangeSelection = function(offset: integer)
         -- TODO: this should be a method of ScrollableTextLines
-        local newCurrent = scrollable.scrollbar.current + offset
-        scrollable.scrollbar:setCurrent(newCurrent)
+        local newCurrent = scrollable.scrollable.scrollbar.current + offset
+        scrollable.scrollable:setCurrent(newCurrent)
         scrollable:update()
         scrollable.options.events.onChange(newCurrent)
     end
@@ -846,6 +855,8 @@ local function loadPlayerSpecials()
     end
 end
 
+local testElement: ui.Element = nil
+
 local function onKeyPress(key: input.KeyboardEvent)
     if not mainElement and input.getKeyName(key.code):lower() == getOpenSpecialMainElementKey():lower() then
         loadPlayerSpecials()
@@ -862,7 +873,47 @@ local function onKeyPress(key: input.KeyboardEvent)
     elseif editElement and key.code == input.KEY.Enter then
         -- TODO
     elseif key.code == input.KEY.Y then
+        local toBeGroupped: {Grouppable} = {}
+        for _, advantage in ipairs(advantages) do
+            table.insert(toBeGroupped, {
+                layout = {
+                    template = templates.textNormal,
+                    props = { text = advantage.name }
+                },
+                group = advantage.group,
+            } as Grouppable)
+        end
 
+        local items = group(toBeGroupped)
+        local scrollableGroups = ScrollableGroups:new {
+            items = items,
+            events = {
+                mouseClickNonGroup = function(expandable: Expandable)
+                        ui.showMessage(expandable.layout.props.text as string)
+                    end,
+                mouseDoubleClickNonGroup = function(expandable: Expandable)
+                        testElement:destroy()
+                        ui.showMessage(expandable.layout.props.text as string)
+                    end,
+                onChange = function() testElement:update() end,
+            },
+            props = {
+                relativeSize = v2(1, 1),
+            },
+        }
+        testElement = ui.create {
+            layer = 'Windows',
+            content = ui.content {
+                background {},
+                scrollableGroups:layout(),
+            },
+            props = {
+                anchor = v2(0.5, 0.5),
+                relativePosition = v2(0.5, 0.5),
+                relativeSize = v2(0.5, 0.5),
+            }
+        }
+        I.UI.setMode('Interface', {windows={}})
     end
 end
 

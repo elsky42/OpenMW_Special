@@ -1,4 +1,5 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local camera = require('openmw.camera')
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local async = require('openmw.async')
+local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
 local I = require('openmw.interfaces')
@@ -24,10 +25,10 @@ local phobiaCheckEvery = 2
 local phobiaTimeSinceCheck = 0
 local phobiaTimeSinceLastTriggerred = 0
 local nightlys = {}
-local nightlysCheckEvery = 10
+local nightlysCheckEvery = 5
 local nightlysTimeSinceCheck = 10000000
 local insidesOutsides = {}
-local insidesCheckEvery = 10
+local insidesCheckEvery = 5
 local insidesTimeSinceCheck = 100000
 local mainElement = nil
 local createMainElement = nil
@@ -305,16 +306,27 @@ end
 
 local function createEditElement(availableSpecials, add)
    destroyMainElement()
-   local names = {}
+   local toGroup = {}
    for _, special in ipairs(availableSpecials) do
-      table.insert(names, special.name .. ' [' .. tostring(special.cost) .. ' points]')
+      table.insert(toGroup, {
+         layout = {
+            template = templates.textNormal,
+            props = { text = special.name },
+         },
+         group = special.group,
+         data = special,
+      })
    end
+   local items = group(toGroup)
    local scrollable
-   scrollable = ScrollableTextLines:new({
-      lines = names,
+   scrollable = ScrollableGroups:new({
+      items = items,
       events = {
-         mouseDoubleClick = function(i)
-            add(availableSpecials[i])
+         mouseClickNonGroup = function(item)
+            print('mouse click on ' .. tostring((item.data).name))
+         end,
+         mouseDoubleClickNonGroup = function(item)
+            add(item.data)
             destroyEditElement()
             createMainElement()
          end,
@@ -327,8 +339,8 @@ local function createEditElement(availableSpecials, add)
    })
    editElementChangeSelection = function(offset)
 
-      local newCurrent = scrollable.scrollbar.current + offset
-      scrollable.scrollbar:setCurrent(newCurrent)
+      local newCurrent = scrollable.scrollable.scrollbar.current + offset
+      scrollable.scrollable:setCurrent(newCurrent)
       scrollable:update()
       scrollable.options.events.onChange(newCurrent)
    end
@@ -846,6 +858,8 @@ local function loadPlayerSpecials()
    end
 end
 
+local testElement = nil
+
 local function onKeyPress(key)
    if not mainElement and input.getKeyName(key.code):lower() == getOpenSpecialMainElementKey():lower() then
       loadPlayerSpecials()
@@ -862,7 +876,47 @@ local function onKeyPress(key)
    elseif editElement and key.code == input.KEY.Enter then
 
    elseif key.code == input.KEY.Y then
+      local toBeGroupped = {}
+      for _, advantage in ipairs(advantages) do
+         table.insert(toBeGroupped, {
+            layout = {
+               template = templates.textNormal,
+               props = { text = advantage.name },
+            },
+            group = advantage.group,
+         })
+      end
 
+      local items = group(toBeGroupped)
+      local scrollableGroups = ScrollableGroups:new({
+         items = items,
+         events = {
+            mouseClickNonGroup = function(expandable)
+               ui.showMessage(expandable.layout.props.text)
+            end,
+            mouseDoubleClickNonGroup = function(expandable)
+               testElement:destroy()
+               ui.showMessage(expandable.layout.props.text)
+            end,
+            onChange = function() testElement:update() end,
+         },
+         props = {
+            relativeSize = v2(1, 1),
+         },
+      })
+      testElement = ui.create({
+         layer = 'Windows',
+         content = ui.content({
+            background({}),
+            scrollableGroups:layout(),
+         }),
+         props = {
+            anchor = v2(0.5, 0.5),
+            relativePosition = v2(0.5, 0.5),
+            relativeSize = v2(0.5, 0.5),
+         },
+      })
+      I.UI.setMode('Interface', { windows = {} })
    end
 end
 

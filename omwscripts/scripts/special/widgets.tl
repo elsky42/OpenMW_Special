@@ -195,6 +195,9 @@ global record Scrollbar
     scroller: ui.Layout
     downButton: ui.Layout
     _layout: ui.Layout
+
+    increase: function(Scrollbar)
+    decrease: function(Scrollbar)
 end
 
 function Scrollbar:new(options: ScrollbarOptions): Scrollbar
@@ -220,39 +223,25 @@ function Scrollbar:updateScrollerRelativePosition()
 end
 
 function Scrollbar:updateScroller()
-    if not self.scroller then return end
     self.scroller.props = self.scroller.props or {}
     self.scroller.props.relativeSize = v2(1, self.scrollerRelativeSizeY)
     self:updateScrollerRelativePosition()
 end
 
-function Scrollbar:decreaseSize()
-    self.options.size = math.max(1, self.options.size - 1)
-    self.current = math.min(self.options.size, self.current)
-    if self.options.size <= 1 then
-        if self._layout then
-            self._layout.content = ui.content {}
-        end
-    else
-        self.scrollerRelativeSizeY = self.scrollerAreaRelativeSizeY / self.options.size
-        self:updateScroller()
-    end
-end
+function Scrollbar:update()
+    self.scrollerRelativeSizeY = self.scrollerAreaRelativeSizeY / self.options.size
 
-function Scrollbar:setCurrent(newCurrent: number)
-    self.current = math.max(1, math.min(self.options.size, newCurrent))
-    self:updateScrollerRelativePosition()
-end
-
-function Scrollbar:increase() self:setCurrent(self.current + 1) end
-function Scrollbar:decrease() self:setCurrent(self.current - 1) end
-
-function Scrollbar:layout(): ui.Layout
-    if self.options.size <= 1 then return {} end
-    local content = ui.content {}
+    if self.options.size <= 1 then return end
     
+    if self._layout and self._layout.content and #self._layout.content > 1 then
+        self:updateScroller()
+        return
+    end
+
+    self._layout.content = ui.content {}
+
     -- border
-    content:add {
+    self._layout.content:add {
         template = I.MWUI.templates.borders,
         props = { relativeSize = v2(1, 1) },
     }
@@ -270,13 +259,11 @@ function Scrollbar:layout(): ui.Layout
             relativeSize = v2(1, self.buttonRelativeSizeY),
         },
     }
-    content:add(self.upButton)
+    self._layout.content:add(self.upButton)
 
     -- scroller
-    self.scroller = {
-        template = templates.sandImage,
-    }
-    content:add(self.scroller)
+    self.scroller = { template = templates.sandImage }
+    self._layout.content:add(self.scroller)
     self:updateScroller()
 
     -- down button
@@ -294,12 +281,32 @@ function Scrollbar:layout(): ui.Layout
             relativeSize = v2(1, self.buttonRelativeSizeY),
         },
     }
-    content:add(self.downButton)
+    self._layout.content:add(self.downButton)
+end
 
+function Scrollbar:changeSize(newSize: number)
+    self.options.size = math.max(1, newSize)
+    self.current = math.min(self.options.size, self.current)
+    self:update()
+end
+
+function Scrollbar:decreaseSize()
+    self:changeSize(self.options.size - 1)
+end
+
+function Scrollbar:setCurrent(newCurrent: number)
+    self.current = math.max(1, math.min(self.options.size, newCurrent))
+    self:updateScrollerRelativePosition()
+end
+
+function Scrollbar:increase() self:setCurrent(self.current + 1) end
+function Scrollbar:decrease() self:setCurrent(self.current - 1) end
+
+function Scrollbar:layout(): ui.Layout
     self._layout = {
-        content = content,
         props = self.options.props as table,
     }
+    self:update()
     return self._layout
 end
 
@@ -402,4 +409,330 @@ function ScrollableTextLines:layout(): ui.Layout
         content = content,
         props = self.options.props as table,
     }
+end
+
+
+global record ScrollableProperties
+    relativePosition: V2
+    relativeSize: V2
+    scrollbarRelativeSizeWidth: number
+end
+
+global record ScrollableEvents
+    mouseClick: function(number)
+    mouseDoubleClick: function(number)
+    onChange: function(number)
+end
+
+global record ScrollableOptions
+    lines: {ui.Layout}
+    events: ScrollableEvents
+    props: ScrollableProperties
+end
+
+global record Scrollable
+    options: ScrollableOptions
+    linesFlex: ui.Layout
+    scrollbar: Scrollbar
+
+    _layout: ui.Layout
+end
+
+local noOp = function() end
+
+function Scrollable:new(options: ScrollableOptions): Scrollable
+    local self: Scrollable = setmetatable({}, { __index = Scrollable })
+    options.lines = options.lines or {}
+    options.events = options.events or {}
+    options.events.mouseClick = options.events.mouseClick or noOp
+    options.events.mouseDoubleClick = options.events.mouseDoubleClick or noOp
+    options.events.onChange = options.events.onChange or noOp
+    options.props = options.props or {}
+    options.props.scrollbarRelativeSizeWidth = options.props.scrollbarRelativeSizeWidth or 0.01
+    self.options = options
+    return self
+end
+
+
+function Scrollable:update()
+    if not self.linesFlex then return end
+    local linesFlexContent = ui.content { }
+    for i, line in ipairs(self.options.lines) do
+        if i >= self.scrollbar.current then
+            linesFlexContent:add {
+                type = ui.TYPE.Container,
+                content = ui.content { line },
+                events = {
+                    mouseClick = async:callback(function()
+                            self.options.events.mouseClick(i)
+                        end),
+                    mouseDoubleClick = async:callback(function()
+                            self.options.events.mouseDoubleClick(i)
+                        end),
+                },
+            }
+        end
+    end
+    self.linesFlex.content = linesFlexContent
+end
+
+function Scrollable:updateAndOnChange()
+    self:update()
+    self.options.events.onChange(self.scrollbar.current)
+end
+
+function Scrollable:setCurrent(current: number)
+    self.scrollbar:setCurrent(current)
+    self:updateAndOnChange()
+end
+
+function Scrollable:increase()
+    self.scrollbar:increase()
+    self:updateAndOnChange()
+end
+
+function Scrollable:decrease()
+    self.scrollbar:decrease()
+    self:updateAndOnChange()
+end
+
+function Scrollable:setLines(lines: {ui.Layout})
+    self.options.lines = lines or {}
+    self.scrollbar:changeSize(#self.options.lines)
+    self:update()
+end
+
+function Scrollable:remove(i: number)
+    table.remove(self.options.lines, i)
+    self.scrollbar:decreaseSize()
+    self:updateAndOnChange()
+end
+
+function Scrollable:layout(): ui.Layout
+    local content = ui.content {}
+
+    local scrollbarPositionX = 1 - 2 * 0.01 - self.options.props.scrollbarRelativeSizeWidth 
+    self.linesFlex = {
+        type = ui.TYPE.Flex,
+        props = {
+            autoSize = false,
+            relativePosition = v2(0.01, 0.01),
+            relativeSize = v2(scrollbarPositionX, 0.98),
+        },
+    }
+    content:add(self.linesFlex)
+    self.scrollbar = Scrollbar:new {
+        size = #self.options.lines,
+        events = {
+            onChange = function(_: number) self:updateAndOnChange() end,
+        },
+        props = {
+            relativePosition = v2(scrollbarPositionX, 0.01),
+            relativeSize = v2(self.options.props.scrollbarRelativeSizeWidth, 0.98),
+        },
+    }
+    local scrollbarLayout = self.scrollbar:layout()
+    scrollbarLayout.name = 'scrollbar'
+    content:add(self.scrollbar:layout())
+    
+    self:update()
+
+    self._layout =  {
+        content = content,
+        props = self.options.props as table,
+    }
+    return self._layout
+end
+
+global record Expandable
+    layout: ui.Layout
+    data: any
+    isExpanded: boolean
+    items: {Expandable}
+    numParents: number
+end
+
+function Expandable:new(expandable: Expandable): Expandable
+    local self: Expandable = setmetatable(expandable, { __index = Expandable })
+    expandable.isExpanded = expandable.isExpanded == nil and false or expandable.isExpanded
+    expandable.items = expandable.items == nil and {} or expandable.items
+    expandable.numParents = expandable.numParents == nil and 0 or expandable.numParents
+    return self
+end
+
+global function flattenExpandables(expandables: {Expandable}): {Expandable}
+    local layouts: {Expandable} = {}
+    local toVisit: {Expandable} = {}
+    for i = 0, #expandables - 1 do
+        expandables[#expandables - i].numParents = 0
+        table.insert(toVisit, expandables[#expandables - i])
+    end
+    while #toVisit > 0 do
+        local current = table.remove(toVisit)
+        table.insert(layouts, current)
+        if current.isExpanded then
+            for i = 0, #current.items - 1 do
+                current.items[#current.items - i].numParents = current.numParents + 1
+                table.insert(toVisit, current.items[#current.items - i])
+            end
+        end
+    end
+    return layouts
+end
+
+global record ExpandableScrollableEvents
+    mouseClickGroup: function(Expandable)
+    mouseClickNonGroup: function(Expandable)
+    mouseDoubleClickGroup: function(Expandable)
+    mouseDoubleClickNonGroup: function(Expandable)
+    onChange: function(number) 
+end
+
+global record ExpandableScrollableOption
+    items: {Expandable}
+    events: ExpandableScrollableEvents
+    props: ScrollableProperties
+end
+
+global record ScrollableGroups
+    options: ExpandableScrollableOption
+
+    scrollable: Scrollable
+
+    _flattenedItems: {Expandable}
+    _layout: ui.Layout
+end
+
+function ScrollableGroups:new(options: ExpandableScrollableOption): ScrollableGroups
+    local self: ScrollableGroups = setmetatable({}, { __index = ScrollableGroups })
+    self.options = options
+    self.options.events = self.options.events or {}
+    self.options.events.mouseClickGroup = self.options.events.mouseClickGroup or noOp
+    self.options.events.mouseClickNonGroup = self.options.events.mouseClickNonGroup or noOp
+    self.options.events.mouseDoubleClickGroup = self.options.events.mouseDoubleClickGroup or noOp
+    self.options.events.mouseDoubleClickNonGroup = self.options.events.mouseDoubleClickNonGroup or noOp
+    self.options.events.onChange = self.options.events.onChange or noOp
+    self.options.items = self.options.items or {}
+    self.options.props = self.options.props or {}
+    return self
+end
+
+function ScrollableGroups:update()
+    self._flattenedItems = flattenExpandables(self.options.items)
+    local itemsLayouts: {ui.Layout} = {}
+    for _, item in ipairs(self._flattenedItems) do
+        item.items = item.items or {}
+        local content = ui.content {}
+        content:add {
+            props = {
+                size = v2(item.numParents * 20, 1),
+            }
+        }
+        if #item.items > 0 then
+            content:add {
+                template = templates.textNormal,
+                props = { text = item.isExpanded and '- ' or '+ ' },
+            }
+        end
+        content:add(item.layout)
+        table.insert(itemsLayouts, {
+            type = ui.TYPE.Flex,
+            content = content,
+            events = {
+                mouseClick = async:callback(function(): boolean
+                        if #item.items > 0 then
+                            self.options.events.mouseClickGroup(item)
+                        else
+                            self.options.events.mouseClickNonGroup(item)    
+                        end
+                        return true
+                    end),
+                mouseDoubleClick = async:callback(function(): boolean
+                        if #item.items > 0 then
+                            self.options.events.mouseDoubleClickGroup(item)
+                        else
+                            self.options.events.mouseDoubleClickNonGroup(item)    
+                        end
+                        return true
+                    end)
+            },
+            props = { horizontal = true },
+        } as ui.Layout)
+    end
+    self.scrollable:setLines(itemsLayouts)
+end
+
+function ScrollableGroups:updateAndOnChange()
+    self:update()
+    self.options.events.onChange()
+end
+
+function ScrollableGroups:layout(): ui.Layout
+    self.scrollable = Scrollable:new {
+        events = {
+            mouseClick = function(i: integer)
+                    self._flattenedItems[i].isExpanded = not self._flattenedItems[i].isExpanded
+                    self:updateAndOnChange()
+                end,
+            onChange = self.options.events.onChange,
+        },
+        props = {
+            relativeSize = v2(1, 1),
+        },
+    }
+    self._layout = {
+        content = ui.content { self.scrollable:layout() },
+        props = self.options.props as table,
+    }
+    self:update()
+    return self._layout
+end
+
+global record Grouppable
+    layout: ui.Layout
+    group: {string}
+    data: any
+end
+
+global function group(grouppables: {Grouppable}): {Expandable}
+    local expandables: {Expandable} = {}
+    local expandablesByGroup: {string:Expandable} = {}
+    for _, grouppable in ipairs(grouppables) do
+        local pgroup: string = ''
+        local lastExpandable: Expandable = nil
+
+        for i, part in ipairs(grouppable.group) do
+            pgroup = pgroup .. '.' .. part
+            if not expandablesByGroup[pgroup] then
+                local expandable = Expandable:new {
+                    layout = {
+                        template = templates.textNormal,
+                        props = { text = part },
+                    },
+                }
+                if lastExpandable then
+                    table.insert(lastExpandable.items, expandable)
+                end
+                expandablesByGroup[pgroup] = expandable
+                if i == 1 then
+                    table.insert(expandables, expandable)
+                end
+            end
+            lastExpandable = expandablesByGroup[pgroup]
+        end
+
+        if lastExpandable then
+            lastExpandable.items = lastExpandable.items or {}
+            table.insert(lastExpandable.items, {
+                layout = grouppable.layout,
+                data = grouppable.data,
+            })
+        else
+            table.insert(expandables, {
+                layout = grouppable.layout,
+                data = grouppable.data,
+            })
+        end
+    end
+    return expandables
 end
