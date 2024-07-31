@@ -585,10 +585,12 @@ global function flattenExpandables(expandables: {Expandable}): {Expandable}
 end
 
 global record ExpandableScrollableEvents
-    mouseClickGroup: function(Expandable)
-    mouseClickNonGroup: function(Expandable)
-    mouseDoubleClickGroup: function(Expandable)
-    mouseDoubleClickNonGroup: function(Expandable)
+    focusGainNonGroup: function(number, Expandable)
+    focusLossNonGroup: function(number, Expandable)
+    mouseClickGroup: function(number, Expandable)
+    mouseClickNonGroup: function(number, Expandable)
+    mouseDoubleClickGroup: function(number, Expandable)
+    mouseDoubleClickNonGroup: function(number, Expandable)
     onChange: function(number) 
 end
 
@@ -611,6 +613,8 @@ function ScrollableGroups:new(options: ExpandableScrollableOption): ScrollableGr
     local self: ScrollableGroups = setmetatable({}, { __index = ScrollableGroups })
     self.options = options
     self.options.events = self.options.events or {}
+    self.options.events.focusGainNonGroup = self.options.events.focusGainNonGroup or noOp
+    self.options.events.focusLossNonGroup = self.options.events.focusLossNonGroup or noOp
     self.options.events.mouseClickGroup = self.options.events.mouseClickGroup or noOp
     self.options.events.mouseClickNonGroup = self.options.events.mouseClickNonGroup or noOp
     self.options.events.mouseDoubleClickGroup = self.options.events.mouseDoubleClickGroup or noOp
@@ -624,7 +628,7 @@ end
 function ScrollableGroups:update()
     self._flattenedItems = flattenExpandables(self.options.items)
     local itemsLayouts: {ui.Layout} = {}
-    for _, item in ipairs(self._flattenedItems) do
+    for i, item in ipairs(self._flattenedItems) do
         item.items = item.items or {}
         local content = ui.content {}
         local paddingSizeX = item.numParents * 0.025
@@ -660,19 +664,29 @@ function ScrollableGroups:update()
             type = ui.TYPE.Flex,
             content = content,
             events = {
+                focusGain = async:callback(function()
+                        if #item.items <= 0 then
+                            self.options.events.focusGainNonGroup(i, item)
+                        end
+                    end),
+                focusLoss = async:callback(function()
+                        if #item.items <= 0 then
+                            self.options.events.focusLossNonGroup(i, item)
+                        end
+                    end),
                 mouseClick = async:callback(function(): boolean
                         if #item.items > 0 then
-                            self.options.events.mouseClickGroup(item)
+                            self.options.events.mouseClickGroup(i, item)
                         else
-                            self.options.events.mouseClickNonGroup(item)    
+                            self.options.events.mouseClickNonGroup(i, item)    
                         end
                         return true
                     end),
                 mouseDoubleClick = async:callback(function(): boolean
                         if #item.items > 0 then
-                            self.options.events.mouseDoubleClickGroup(item)
+                            self.options.events.mouseDoubleClickGroup(i, item)
                         else
-                            self.options.events.mouseDoubleClickNonGroup(item)    
+                            self.options.events.mouseDoubleClickNonGroup(i, item)    
                         end
                         return true
                     end)

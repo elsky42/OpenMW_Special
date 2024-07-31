@@ -12,6 +12,8 @@ global record Special
     -- name of the special advantage/disadvantage to show to the user
     name: string
 
+    description: string
+
     group: {string}
 
     -- The id of the ability to activate
@@ -125,9 +127,17 @@ for _, element in ipairs({'fire', 'frost', 'shock', 'poison'}) do
             local id = spacesToUnderscores(noun) .. '_to_' .. element
             local abilityId = 'special_' .. id
             checkAbilityExists(abilityId)
-            local name = firstToUpper(noun) .. ' to ' .. firstToUpper(element) .. ' (' .. tostring(percentage) .. '%)'
+            local name = firstToUpper(noun) .. ' to ' .. firstToUpper(element)
+            local description = tostring(percentage) .. '% ' .. nounAndGroup[2] .. ' to ' .. firstToUpper(element) .. '.'
             local group = {nounAndGroup[2], firstToUpper(element)}
-            addSpecial { id = id, name = name, group = group, abilityId = abilityId, cost = cost }
+            addSpecial {
+                id = id,
+                name = name,
+                description = description,
+                group = group,
+                abilityId = abilityId,
+                cost = cost
+            }
         end
     end
 end
@@ -141,15 +151,24 @@ for absoluteCost, absolutePercentage in pairs({[40] = 75,
         local noun = nounAndGroup[1]
         local id = spacesToUnderscores(noun) .. '_to_magicka'
         local abilityId = 'special_' .. id
-        local name = firstToUpper(noun) .. ' to magicka (' .. tostring(percentage) .. '%)'
+        local name = firstToUpper(noun) .. ' to magicka'
+        local description = tostring(percentage) .. '% ' .. nounAndGroup[2] .. ' to Magicka.'
         local group = {nounAndGroup[2], 'Magicka'}
-        addSpecial { id = id, name = name, group = group, abilityId = abilityId, cost = cost }
+        addSpecial {
+            id = id,
+            name = name,
+            description = description,
+            group = group,
+            abilityId = abilityId,
+            cost = cost
+        }
     end
 end
 
 addSpecial {
     id = 'robust',
-    name = 'Robust (+10 End)',
+    name = 'Robust',
+    description = '+10 Endurance.',
     group = {'Attribute'},
     abilityId = 'special_robust',
     cost = 20,
@@ -157,7 +176,8 @@ addSpecial {
 
 addSpecial {
     id = 'fragile',
-    name = 'Fragile (-10 End)',
+    name = 'Fragile',
+    description = '-10 Endurance.',
     group = {'Attribute'},
     abilityId = 'special_fragile',
     cost = -20,
@@ -165,7 +185,8 @@ addSpecial {
 
 addSpecial {
     id = 'strong',
-    name = 'Strong (+10 Str)',
+    name = 'Strong',
+    description = '+10 Strength.',
     group = {'Attribute'},
     abilityId = 'special_strong',
     cost = 20,
@@ -173,7 +194,8 @@ addSpecial {
 
 addSpecial {
     id = 'weak',
-    name = 'Weak (-10 Str)',
+    name = 'Weak',
+    description = '-10 Strength.',
     group = {'Attribute'},
     abilityId = 'special_weak',
     cost = -20,
@@ -181,7 +203,8 @@ addSpecial {
 
 addSpecial {
     id = 'agile',
-    name = 'Agile (+10 Agi)',
+    name = 'Agile',
+    description = '+10 Agility.',
     group = {'Attribute'},
     abilityId = 'special_agile',
     cost = 20,
@@ -189,7 +212,8 @@ addSpecial {
 
 addSpecial {
     id = 'Clumsy',
-    name = 'Clumsy (-10 Agi)',
+    name = 'Clumsy',
+    description = '-10 Agility.',
     group = {'Attribute'},
     abilityId = 'special_clumsy',
     cost = -20,
@@ -197,7 +221,8 @@ addSpecial {
 
 addSpecial {
     id = 'fast',
-    name = 'Fast (+10 Spe)',
+    name = 'Fast',
+    description = '+10 Speed.',
     group = {'Attribute'},
     abilityId = 'special_fast',
     cost = 20,
@@ -205,7 +230,8 @@ addSpecial {
 
 addSpecial {
     id = 'slow',
-    name = 'Slow (-10 Spe)',
+    name = 'Slow',
+    description = '-10 Speed.',
     group = {'Attribute'},
     abilityId = 'special_slow',
     cost = -20,
@@ -213,7 +239,8 @@ addSpecial {
 
 addSpecial {
     id = 'charismatic',
-    name = 'Charismatic (+10 Cha)',
+    name = 'Charismatic',
+    description = '+10 Charisma.',
     group = {'Attribute'},
     abilityId = 'special_charismatic',
     cost = 20,
@@ -221,7 +248,8 @@ addSpecial {
 
 addSpecial {
     id = 'uncharismatic',
-    name = 'Uncharismatic (-10 Cha)',
+    name = 'Uncharismatic',
+    description = '-10 Charisma.',
     group = {'Attribute'},
     abilityId = 'special_uncharismatic',
     cost = -20,
@@ -229,7 +257,8 @@ addSpecial {
 
 addSpecial {
     id = 'intelligent',
-    name = 'Intelligent (+10 Int)',
+    name = 'Intelligent',
+    description = '+10 Intelligence.',
     group = {'Attribute'},
     abilityId = 'special_intelligent',
     cost = 20,
@@ -237,7 +266,8 @@ addSpecial {
 
 addSpecial {
     id = 'stupid',
-    name = 'Stupid (-10 Int)',
+    name = 'Stupid',
+    description = '-10 Intelligence.',
     group = {'Attribute'},
     abilityId = 'special_stupid',
     cost = -20,
@@ -245,7 +275,8 @@ addSpecial {
 
 addSpecial {
     id = 'resolute',
-    name = 'Resolute (+10 Wil)',
+    name = 'Resolute',
+    description = '+10 Willpower.',
     group = {'Attribute'},
     abilityId = 'special_resolute',
     cost = 20,
@@ -253,7 +284,8 @@ addSpecial {
 
 addSpecial {
     id = 'irresolute',
-    name = 'Irresolute (-10 Wil)',
+    name = 'Irresolute',
+    description = '-10 Willpower.',
     group = {'Attribute'},
     abilityId = 'special_irresolute',
     cost = -20,
@@ -261,7 +293,8 @@ addSpecial {
 
 addSpecial {
     id = 'lucky',
-    name = 'Lucky (+10 Luc)',
+    name = 'Lucky',
+    description = '+10 Luck.',
     group = {'Attribute'},
     abilityId = 'special_lucky',
     cost = 20,
@@ -269,7 +302,8 @@ addSpecial {
 
 addSpecial {
     id = 'unlucky',
-    name = 'Unlucky (-10 Luc)',
+    name = 'Unlucky',
+    description = '-10 Luck.',
     group = {'Attribute'},
     abilityId = 'special_unlucky',
     cost = -20,
@@ -277,7 +311,8 @@ addSpecial {
 
 addSpecial {
     id = 'regenerative',
-    name = 'Regenerative (1hp/s)',
+    name = 'Regenerative',
+    description = 'Regenerates 1 health per second.',
     group = {'Trait'},
     abilityId = 'special_regenerative',
     cost = 20,
@@ -285,7 +320,8 @@ addSpecial {
 
 addSpecial {
     id = 'relentless',
-    name = 'Relentless (4fp/s)',
+    name = 'Relentless',
+    description = 'Regenerates 4 fatigue per second.',
     group = {'Trait'},
     abilityId = 'special_relentless',
     cost = 20,
@@ -293,7 +329,8 @@ addSpecial {
 
 addSpecial {
     id = 'recharging',
-    name = 'Recharging (1mp/s)',
+    name = 'Recharging',
+    description = 'Regenerates 1 magicka per second.',
     group = {'Trait'},
     abilityId = 'special_recharging',
     cost = 20,
@@ -331,7 +368,8 @@ for _, skill in ipairs {'Heavy Armor',
     local id = 'proficient_in_' .. idPostfix
     addSpecial {
         id = id,
-        name = 'Proficient in ' .. skill .. ' (+20)',
+        name = 'Proficient in ' .. skill,
+        description = skill .. ' +20.',
         group = {'Proficiency'},
         abilityId = 'special_' .. id,
         cost = 20,
@@ -340,7 +378,8 @@ for _, skill in ipairs {'Heavy Armor',
     id = 'inept_at_' .. idPostfix
     addSpecial {
         id = id,
-        name = 'Inept at ' .. skill .. ' (-100)',
+        name = 'Inept at ' .. skill,
+        description = skill .. ' -100.',
         group = {'Ineptness'},
         abilityId = 'special_' .. id,
         cost = -5,
@@ -349,7 +388,8 @@ end
 
 addSpecial {
     id = 'shadowborn',
-    name = 'Shadowborn (Chameleon 20)',
+    name = 'Shadowborn',
+    description = 'Chameleon 20.',
     group = {'Trait'},
     abilityId = 'special_shadowborn',
     cost = 20,
@@ -357,7 +397,8 @@ addSpecial {
 
 addSpecial {
     id = 'dodger',
-    name = 'Dodger (Sanctuary 20)',
+    name = 'Dodger',
+    description = 'Sanctuary 20.',
     group = {'Trait'},
     abilityId = 'special_dodger',
     cost = 20,
@@ -368,7 +409,8 @@ addSpecial {
 ---- ash creatures
 addSpecial {
     id = 'phobia_of_ash_creatures',
-    name = 'Phobia of Ash Creatures (-20 all skills)',
+    name = 'Phobia of Ash Creatures',
+    description = 'Applies a -20 to all skills whenever close to and looking at an Ash enemy.',
     group = {'Phobia'},
     phobiaOf = {'ascended_sleeper', 'dagoth', 'ash', 'corprus'},
     cost = -30,
@@ -391,7 +433,8 @@ for _, beastAndMatch in ipairs({
     }) do
     addSpecial {
         id = 'phobia_of_' .. spacesToUnderscores(beastAndMatch[1]),
-        name = 'Phobia of ' .. firstToUpper(beastAndMatch[1]) .. ' (-20 all skills)',
+        name = 'Phobia of ' .. firstToUpper(beastAndMatch[1]),
+        description = 'Applies a -20 to all skills whenever close to and looking at a ' .. beastAndMatch[1] .. '.',
         group = {'Phobia', 'Beast'},
         phobiaOf = beastAndMatch[2],
         cost = -2,
@@ -401,8 +444,9 @@ end
 ---- Daedra
 addSpecial {
     id = 'phobia_of_daedra',
-    name = 'Phobia of Daedra (-20 all skills)',
-    group = {'Phobia', 'Draedra'},
+    name = 'Phobia of all Daedra',
+    description = 'Applies a -20 to all skills whenever close to and looking at a daedra.',
+    group = {'Phobia'},
     phobiaOf = {'atronach', 'clannfear', 'daedroth', 'dremora', 'golden.*saint', 'hunger', 'ogrim', 'scamp', 'winged.*twilight'},
     cost = -40,
 }
@@ -420,7 +464,8 @@ for _, daedraAndMatch in ipairs({
 }) do
     addSpecial {
         id = 'phobia_of_' .. spacesToUnderscores(daedraAndMatch[1]),
-        name = 'Phobia of ' .. firstToUpper(daedraAndMatch[1]) .. ' (-20 all skills)',
+        name = 'Phobia of ' .. firstToUpper(daedraAndMatch[1]),
+        description = 'Applies a -20 to all skills whenever close to and looking at a ' .. daedraAndMatch[1] .. '.',
         group = {'Phobia', 'Daedra'},
         phobiaOf = daedraAndMatch[2],
         cost = -5,
@@ -430,7 +475,8 @@ end
 ---- Dwemer Constructs
 addSpecial {
     id = 'phobia_of_dwemer_constructs',
-    name = 'Phobia of Dwemer Constructs (-20 all skills)',
+    name = 'Phobia of Dwemer Constructs',
+    description = 'Applies a -20 to all skills whenever close to and looking at a dwemer construct.',
     group = {'Phobia'},
     phobiaOf = {'centurion'},
     cost = -20,
@@ -439,7 +485,8 @@ addSpecial {
 ---- Undeads
 addSpecial {
     id = 'phobia_of_ghosts',
-    name = 'Phobia of Ghosts (-20 all skills)',
+    name = 'Phobia of Ghosts',
+    description = 'Applies a -20 to all skills whenever close to and looking at a ghost.',
     group = {'Phobia', 'Undead'},
     phobiaOf = {'ghost', 'wraith', 'gateway.*haunt', 'ancestor.*guardian', 'ancestor.*wisewoman', 'dahrik.*mezalf'},
     cost = -10,
@@ -447,7 +494,8 @@ addSpecial {
 
 addSpecial {
     id = 'phobia_of_boneundead',
-    name = 'Phobia of Bone Undead (-20 all skills)',
+    name = 'Phobia of Bone Undead',
+    description = 'Applies a -20 to all skills whenever close to and looking at a bonelord, a bonewalker or any other bone undead.',
     group = {'Phobia', 'Undead'},
     phobiaOf = {'bonelord', 'bonewalker', 'wolf.*bone'},
     cost = -10,
@@ -455,7 +503,8 @@ addSpecial {
 
 addSpecial {
     id = 'phobia_of_skeletons',
-    name = 'Phobia of Skeletons (-20 all skills)',
+    name = 'Phobia of Skeletons',
+    description = 'Applies a -20 to all skills whenever close to and looking at a skeleton.',
     group = {'Phobia', 'Undead'},
     phobiaOf = {'skeleton', 'worm.*lord'},
     cost = -10,
@@ -463,7 +512,8 @@ addSpecial {
 
 addSpecial {
     id = 'phobia_of_liches',
-    name = 'Phobia of Liches (-20 all skills)',
+    name = 'Phobia of Liches',
+    description = 'Applies a -20 to all skills whenever close to and looking at a lich.',
     group = {'Phobia', 'Undead'},
     phobiaOf = {'lich'},
     cost = -10,
@@ -471,7 +521,8 @@ addSpecial {
 
 addSpecial {
     id = 'phobia_of_draugr',
-    name = 'Phobia of Draugr (-20 all skills)',
+    name = 'Phobia of Draugr',
+    description = 'Applies a -20 to all skills whenever close to and looking at a draugr.',
     group = {'Phobia', 'Undead'},
     phobiaOf = {'draugr'},
     cost = -10, -- too few?
@@ -481,7 +532,8 @@ addSpecial {
 
 addSpecial {
     id = 'night_person',
-    name = 'Night Person (+10 AG/IN/WI/CH at night)',
+    name = 'Night Person',
+    description = '+10 to Agility, Intelligence, Willpower and Charisma at night between 6pm and 6am.',
     group = {'Trait'},
     abilityIdAtNight = 'special_night_person',
     cost = 10,
@@ -490,6 +542,7 @@ addSpecial {
 addSpecial {
     id = 'good_natured',
     name = 'Good Natured',
+    description = '-10 to all combat skills and +5 to every other skill. Combat skills are: Spear Axe, BluntWeapon, LongBlade, Marksman, HandToHand, ShortBlade, Mysticism and Destruction.',
     group = {'Trait'},
     abilityId = 'special_good_natured',
     cost = 0,
@@ -498,6 +551,7 @@ addSpecial {
 addSpecial {
     id = 'small_frame',
     name = 'Small Frame',
+    description = '+10 to Agility and -10 to Endurance.',
     group = {'Trait'},
     abilityId = 'special_small_frame',
     cost = 0,
@@ -506,6 +560,7 @@ addSpecial {
 addSpecial {
     id = 'claustrophobia',
     name = 'Claustrophobia',
+    description = '+10 to all skills when outside and -10 to all skills when not outside.',
     group = {'Trait'},
     abilityIdWhenInside = 'special_claustrophobia_inside',
     abilityIdWhenOutside = 'special_claustrophibia_outside',

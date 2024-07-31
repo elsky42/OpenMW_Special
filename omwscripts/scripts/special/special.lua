@@ -320,6 +320,7 @@ local function createEditElement(availableSpecials, add)
             content = ui.content({
                {
                   template = templates.textNormal,
+                  name = 'text',
                   props = {
                      autoSize = false,
                      relativeSize = v2(0.7, 0),
@@ -329,6 +330,7 @@ local function createEditElement(availableSpecials, add)
                },
                {
                   template = templates.textNormal,
+                  name = 'cost',
                   props = {
                      autoSize = false,
                      relativeSize = v2(0.3, 0),
@@ -344,11 +346,49 @@ local function createEditElement(availableSpecials, add)
       })
    end
    local items = group(toGroup)
+   local selected = nil
    local scrollable
    scrollable = ScrollableGroups:new({
       items = items,
       events = {
-         mouseDoubleClickNonGroup = function(item)
+         focusGainNonGroup = function(_, item)
+            if not item.data then return end
+            local special = item.data
+            if not special.description then return end
+            local tooltip = lookupLayout(editElement.layout, { 'tooltip' })
+            tooltip.content = ui.content({
+               background({}),
+               borders(true),
+               {
+                  template = templates.textNormal,
+                  props = {
+                     autoSize = false,
+                     multiline = true,
+                     relativePosition = v2(0.05, 0.1),
+                     relativeSize = v2(0.9, 0.8),
+                     wordWrap = true,
+                     text = special.description,
+                  },
+               },
+            })
+            editElement:update()
+         end,
+         focusLossNonGroup = function(_, _)
+            local tooltip = lookupLayout(editElement.layout, { 'tooltip' })
+            if not tooltip.content then return end
+            tooltip.content = nil
+            editElement:update()
+         end,
+         mouseClickNonGroup = function(_, item)
+            if type(selected) == "table" then
+               lookupLayout(selected.layout, { 'text' }).props.textColor = templates.textNormal.props.textColor
+               lookupLayout(selected.layout, { 'cost' }).props.textColor = templates.textNormal.props.textColor
+            end
+            selected = item
+            lookupLayout(selected.layout, { 'text' }).props.textColor = templates.textHeader.props.textColor
+            lookupLayout(selected.layout, { 'cost' }).props.textColor = templates.textHeader.props.textColor
+         end,
+         mouseDoubleClickNonGroup = function(_, item)
             add(item.data)
             destroyEditElement()
             createMainElement()
@@ -391,12 +431,25 @@ local function createEditElement(availableSpecials, add)
    }):layout())
    editElement = ui.create({
       layer = 'Windows',
-      content = content,
-      props = {
-         anchor = v2(0.5, 0.5),
-         relativePosition = v2(0.5, 0.5),
-         relativeSize = v2(0.5, 0.5),
-      },
+      content = ui.content({
+         {
+            content = content,
+            props = {
+               anchor = v2(0.5, 0.5),
+               relativePosition = v2(0.5, 0.5),
+               relativeSize = v2(0.5, 0.5),
+            },
+         },
+         {
+            name = 'tooltip',
+            props = {
+               anchor = v2(0.5, 0),
+               relativePosition = v2(0.5, 0.77),
+               relativeSize = v2(0.5, 0.15),
+            },
+         },
+      }),
+      props = { relativeSize = v2(1, 1) },
    })
    I.UI.setMode('Interface', { windows = {} })
 end
@@ -915,10 +968,10 @@ local function onKeyPress(key)
       local scrollableGroups = ScrollableGroups:new({
          items = items,
          events = {
-            mouseClickNonGroup = function(expandable)
+            mouseClickNonGroup = function(_, expandable)
                ui.showMessage(expandable.layout.props.text)
             end,
-            mouseDoubleClickNonGroup = function(expandable)
+            mouseDoubleClickNonGroup = function(_, expandable)
                testElement:destroy()
                ui.showMessage(expandable.layout.props.text)
             end,

@@ -320,6 +320,7 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
                 content = ui.content {
                     {
                         template = templates.textNormal,
+                        name = 'text',
                         props = {
                             autoSize = false,
                             relativeSize = v2(0.7, 0),
@@ -329,6 +330,7 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
                     },
                     {
                         template = templates.textNormal,
+                        name = 'cost',
                         props = {
                             autoSize = false,
                             relativeSize = v2(0.3, 0),
@@ -344,11 +346,49 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
         })
     end
     local items = group(toGroup)
+    local selected: Expandable = nil
     local scrollable: ScrollableGroups
     scrollable = ScrollableGroups:new {
         items = items,
         events = {
-            mouseDoubleClickNonGroup = function(item: Expandable)
+            focusGainNonGroup = function(_: number, item: Expandable)
+                    if not item.data then return end
+                    local special = item.data as Special
+                    if not special.description then return end
+                    local tooltip = lookupLayout(editElement.layout, {'tooltip'})
+                    tooltip.content = ui.content {
+                        background {},
+                        borders(true),
+                        {
+                            template = templates.textNormal,
+                            props = {
+                                autoSize = false,
+                                multiline = true,
+                                relativePosition = v2(0.05, 0.1),
+                                relativeSize = v2(0.9, 0.8),
+                                wordWrap = true,
+                                text = special.description,
+                            }
+                        },
+                    }
+                    editElement:update()
+                end,
+            focusLossNonGroup = function(_: number, _: Expandable)
+                    local tooltip = lookupLayout(editElement.layout, {'tooltip'})
+                    if not tooltip.content then return end
+                    tooltip.content = nil
+                    editElement:update()
+                end,
+            mouseClickNonGroup = function(_: number, item: Expandable)
+                    if selected is Expandable then
+                        lookupLayout(selected.layout, {'text'}).props.textColor = templates.textNormal.props.textColor
+                        lookupLayout(selected.layout, {'cost'}).props.textColor = templates.textNormal.props.textColor
+                    end
+                    selected = item
+                    lookupLayout(selected.layout, {'text'}).props.textColor = templates.textHeader.props.textColor
+                    lookupLayout(selected.layout, {'cost'}).props.textColor = templates.textHeader.props.textColor
+                end,
+            mouseDoubleClickNonGroup = function(_: number, item: Expandable)
                     add(item.data as Special)
                     destroyEditElement()
                     createMainElement()
@@ -391,12 +431,25 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
     }:layout())
     editElement = ui.create {
         layer = 'Windows',
-        content = content,
-        props = {
-            anchor = v2(0.5, 0.5),
-            relativePosition = v2(0.5, 0.5),
-            relativeSize = v2(0.5, 0.5),
+        content = ui.content {
+            {
+                content = content,
+                props = {
+                    anchor = v2(0.5, 0.5),
+                    relativePosition = v2(0.5, 0.5),
+                    relativeSize = v2(0.5, 0.5),
+                },
+            },
+            {
+                name = 'tooltip',
+                props = {
+                    anchor = v2(0.5, 0),
+                    relativePosition = v2(0.5, 0.77),
+                    relativeSize = v2(0.5, 0.15),
+                },
+            }
         },
+        props = { relativeSize = v2(1, 1) },
     }
     I.UI.setMode('Interface', {windows = {}})
 end
@@ -915,10 +968,10 @@ local function onKeyPress(key: input.KeyboardEvent)
         local scrollableGroups = ScrollableGroups:new {
             items = items,
             events = {
-                mouseClickNonGroup = function(expandable: Expandable)
+                mouseClickNonGroup = function(_: number, expandable: Expandable)
                         ui.showMessage(expandable.layout.props.text as string)
                     end,
-                mouseDoubleClickNonGroup = function(expandable: Expandable)
+                mouseDoubleClickNonGroup = function(_: number, expandable: Expandable)
                         testElement:destroy()
                         ui.showMessage(expandable.layout.props.text as string)
                     end,
