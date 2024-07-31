@@ -415,6 +415,7 @@ end
 global record ScrollableProperties
     relativePosition: V2
     relativeSize: V2
+    lineSizeY: number
     scrollbarRelativeSizeWidth: number
 end
 
@@ -442,6 +443,7 @@ local noOp = function() end
 
 function Scrollable:new(options: ScrollableOptions): Scrollable
     local self: Scrollable = setmetatable({}, { __index = Scrollable })
+    assert(options.props.lineSizeY)
     options.lines = options.lines or {}
     options.events = options.events or {}
     options.events.mouseClick = options.events.mouseClick or noOp
@@ -453,14 +455,12 @@ function Scrollable:new(options: ScrollableOptions): Scrollable
     return self
 end
 
-
 function Scrollable:update()
     if not self.linesFlex then return end
     local linesFlexContent = ui.content { }
     for i, line in ipairs(self.options.lines) do
         if i >= self.scrollbar.current then
             linesFlexContent:add {
-                type = ui.TYPE.Container,
                 content = ui.content { line },
                 events = {
                     mouseClick = async:callback(function()
@@ -469,6 +469,10 @@ function Scrollable:update()
                     mouseDoubleClick = async:callback(function()
                             self.options.events.mouseDoubleClick(i)
                         end),
+                },
+                props = {
+                    relativeSize = v2(1, 0),
+                    size = v2(0, self.options.props.lineSizeY),
                 },
             }
         end
@@ -517,7 +521,7 @@ function Scrollable:layout(): ui.Layout
         props = {
             autoSize = false,
             relativePosition = v2(0.01, 0.01),
-            relativeSize = v2(scrollbarPositionX, 0.98),
+            relativeSize = v2(scrollbarPositionX - 0.05, 0.98),
         },
     }
     content:add(self.linesFlex)
@@ -623,18 +627,35 @@ function ScrollableGroups:update()
     for _, item in ipairs(self._flattenedItems) do
         item.items = item.items or {}
         local content = ui.content {}
+        local paddingSizeX = item.numParents * 0.025
+        local expandingSignSizeX = 0.05
         content:add {
             props = {
-                size = v2(item.numParents * 20, 1),
+                relativeSize = v2(paddingSizeX, 1)
             }
         }
         if #item.items > 0 then
             content:add {
                 template = templates.textNormal,
-                props = { text = item.isExpanded and '- ' or '+ ' },
+                props = {
+                    autoSize = false,
+                    relativeSize = v2(expandingSignSizeX, 1),
+                    text = item.isExpanded and '-' or '+',
+                },
+            }
+        else
+            content:add {
+                props = {
+                    relativeSize = v2(expandingSignSizeX, 1),
+                },
             }
         end
-        content:add(item.layout)
+        content:add {
+            content = ui.content { item.layout },
+            props = {
+                relativeSize = v2(1 - paddingSizeX - expandingSignSizeX, 1),
+            },
+        }
         table.insert(itemsLayouts, {
             type = ui.TYPE.Flex,
             content = content,
@@ -656,7 +677,12 @@ function ScrollableGroups:update()
                         return true
                     end)
             },
-            props = { horizontal = true },
+            props = {
+                autoSize = false,
+                horizontal = true,
+                relativeSize = v2(1, 0),
+                size = v2(0, templates.textNormal.props.textSize as number),
+            },
         } as ui.Layout)
     end
     self.scrollable:setLines(itemsLayouts)
@@ -678,6 +704,7 @@ function ScrollableGroups:layout(): ui.Layout
         },
         props = {
             relativeSize = v2(1, 1),
+            lineSizeY = self.options.props.lineSizeY,
         },
     }
     self._layout = {

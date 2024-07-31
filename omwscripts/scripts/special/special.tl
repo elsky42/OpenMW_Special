@@ -310,8 +310,34 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
     for _, special in ipairs(availableSpecials) do
         table.insert(toGroup, {
             layout = {
-                template = templates.textNormal,
-                props = { text = special.name },
+                type = ui.TYPE.Flex,
+                props = {
+                    autoSize = false,
+                    horizontal = true,
+                    relativeSize = v2(1, 0),
+                    size = v2(0, templates.textNormal.props.textSize as number),
+                },
+                content = ui.content {
+                    {
+                        template = templates.textNormal,
+                        props = {
+                            autoSize = false,
+                            relativeSize = v2(0.7, 0),
+                            size = v2(0, templates.textNormal.props.textSize as number),
+                            text = special.name,
+                        },
+                    },
+                    {
+                        template = templates.textNormal,
+                        props = {
+                            autoSize = false,
+                            relativeSize = v2(0.3, 0),
+                            size = v2(0, templates.textNormal.props.textSize as number),
+                            text = tostring(special.cost),
+                            textAlignH = ui.ALIGNMENT.End,
+                        }
+                    }
+                },
             }  as ui.Layout,
             group = special.group,
             data = special,
@@ -330,6 +356,7 @@ local function createEditElement(availableSpecials: {Special}, add: function(Spe
             onChange = function(_: number) editElement:update() end,
         },
         props = {
+            lineSizeY = templates.textNormal.props.textSize as number,
             relativePosition = v2(0.05, 0.05),
             relativeSize = v2(0.9, 0.7),
         },

@@ -310,8 +310,34 @@ local function createEditElement(availableSpecials, add)
    for _, special in ipairs(availableSpecials) do
       table.insert(toGroup, {
          layout = {
-            template = templates.textNormal,
-            props = { text = special.name },
+            type = ui.TYPE.Flex,
+            props = {
+               autoSize = false,
+               horizontal = true,
+               relativeSize = v2(1, 0),
+               size = v2(0, templates.textNormal.props.textSize),
+            },
+            content = ui.content({
+               {
+                  template = templates.textNormal,
+                  props = {
+                     autoSize = false,
+                     relativeSize = v2(0.7, 0),
+                     size = v2(0, templates.textNormal.props.textSize),
+                     text = special.name,
+                  },
+               },
+               {
+                  template = templates.textNormal,
+                  props = {
+                     autoSize = false,
+                     relativeSize = v2(0.3, 0),
+                     size = v2(0, templates.textNormal.props.textSize),
+                     text = tostring(special.cost),
+                     textAlignH = ui.ALIGNMENT.End,
+                  },
+               },
+            }),
          },
          group = special.group,
          data = special,
@@ -322,9 +348,6 @@ local function createEditElement(availableSpecials, add)
    scrollable = ScrollableGroups:new({
       items = items,
       events = {
-         mouseClickNonGroup = function(item)
-            print('mouse click on ' .. tostring((item.data).name))
-         end,
          mouseDoubleClickNonGroup = function(item)
             add(item.data)
             destroyEditElement()
@@ -333,6 +356,7 @@ local function createEditElement(availableSpecials, add)
          onChange = function(_) editElement:update() end,
       },
       props = {
+         lineSizeY = templates.textNormal.props.textSize,
          relativePosition = v2(0.05, 0.05),
          relativeSize = v2(0.9, 0.7),
       },
