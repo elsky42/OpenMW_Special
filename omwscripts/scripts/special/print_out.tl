@@ -69,7 +69,7 @@ local function push(specials_: {GrouppedSpecial})
         return s1.name < s2.name
     end)
     for i = 0, #specials_ - 1 do
-        table.insert(toPrint, specials_[i])
+        table.insert(toPrint, specials_[#specials_ - i])
     end
 end
 push(grouppedSpecials)
