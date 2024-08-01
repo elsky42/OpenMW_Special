@@ -1,6 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local core = require('openmw.core')
-
-maxDifficultyPoints = 50
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; maxDifficultyPoints = 50
 maxPaddingPoints = 20
 maxValidDifficultyPoints = maxDifficultyPoints - maxPaddingPoints
 reputationCost = 2
@@ -67,18 +65,8 @@ disadvantages = {}
 disadvantagesById = {}
 disadvantagesByAbilityId = {}
 
-local function checkAbilityExists(abilityId)
-   if (core.magic.spells.records)[abilityId] == nil then
-      error('Ability ' .. abilityId .. ' not found in game! Please load the plugin special.omwaddon.')
-   end
-end
 
-checkAbilityExists('special_phobia')
-
-local function addSpecial(special)
-   if special.abilityId then
-      checkAbilityExists(special.abilityId)
-   end
+function addSpecial(special)
    if special.cost >= 0 then
       table.insert(advantages, special)
       advantagesById[special.id] = special
@@ -126,7 +114,6 @@ for _, element in ipairs({ 'fire', 'frost', 'shock', 'poison' }) do
          local noun = nounAndGroup[1]
          local id = spacesToUnderscores(noun) .. '_to_' .. element
          local abilityId = 'special_' .. id
-         checkAbilityExists(abilityId)
          local name = firstToUpper(noun) .. ' to ' .. firstToUpper(element)
          local description = tostring(percentage) .. '% ' .. nounAndGroup[2] .. ' to ' .. firstToUpper(element) .. '.'
          local group = { nounAndGroup[2], firstToUpper(element) }
@@ -563,7 +550,7 @@ addSpecial({
    description = '+10 to all skills when outside and -10 to all skills when not outside.',
    group = { 'Trait' },
    abilityIdWhenInside = 'special_claustrophobia_inside',
-   abilityIdWhenOutside = 'special_claustrophibia_outside',
+   abilityIdWhenOutside = 'special_claustrophobia_outside',
    cost = 0,
 })
 

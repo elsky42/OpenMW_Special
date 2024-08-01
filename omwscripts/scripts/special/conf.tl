@@ -1,5 +1,3 @@
-local core = require('openmw.core')
-
 global maxDifficultyPoints = 50
 global maxPaddingPoints = 20
 global maxValidDifficultyPoints = maxDifficultyPoints - maxPaddingPoints
@@ -67,18 +65,8 @@ global disadvantages: {Special} = {}
 global disadvantagesById: {string:Special} = {}
 global disadvantagesByAbilityId: {string:Special} = {}
 
-local function checkAbilityExists(abilityId: string)
-    if (core.magic.spells.records as {string:core.Spell})[abilityId] == nil then
-        error('Ability ' .. abilityId .. ' not found in game! Please load the plugin special.omwaddon.')
-    end
-end
 
-checkAbilityExists('special_phobia')
-
-local function addSpecial(special: Special)
-    if special.abilityId then
-        checkAbilityExists(special.abilityId)
-    end
+global function addSpecial(special: Special)
     if special.cost >= 0 then
         table.insert(advantages, special)
         advantagesById[special.id] = special
@@ -126,7 +114,6 @@ for _, element in ipairs({'fire', 'frost', 'shock', 'poison'}) do
             local noun = nounAndGroup[1]
             local id = spacesToUnderscores(noun) .. '_to_' .. element
             local abilityId = 'special_' .. id
-            checkAbilityExists(abilityId)
             local name = firstToUpper(noun) .. ' to ' .. firstToUpper(element)
             local description = tostring(percentage) .. '% ' .. nounAndGroup[2] .. ' to ' .. firstToUpper(element) .. '.'
             local group = {nounAndGroup[2], firstToUpper(element)}
@@ -563,7 +550,7 @@ addSpecial {
     description = '+10 to all skills when outside and -10 to all skills when not outside.',
     group = {'Trait'},
     abilityIdWhenInside = 'special_claustrophobia_inside',
-    abilityIdWhenOutside = 'special_claustrophibia_outside',
+    abilityIdWhenOutside = 'special_claustrophobia_outside',
     cost = 0,
 }
 

@@ -1,4 +1,3 @@
-local async = require('openmw.async')
 local camera = require('openmw.camera')
 local core = require('openmw.core')
 local input = require('openmw.input')
@@ -38,6 +37,38 @@ local applyElement: ui.Element = nil
 local reputationElement: ui.Element = nil
 
 local settings = storage.playerSection('special_settings')
+
+-- sanity check that all the spells exist
+local function checkSpellExists(abilityId: string)
+    if (core.magic.spells.records as {string:core.Spell})[abilityId] == nil then
+        error('Ability ' .. abilityId .. ' not found in game! Please load the plugin special.omwaddon.')
+    end
+end
+
+local function checkSpecialAbilitiesExist(special: Special)
+    if special.abilityId then
+        checkSpellExists(special.abilityId)
+    end
+    if special.abilityIdAtNight then
+        checkSpellExists(special.abilityIdAtNight)
+    end
+    if special.abilityIdWhenInside then
+        checkSpellExists(special.abilityIdWhenInside)
+    end
+    if special.abilityIdWhenOutside then
+        checkSpellExists(special.abilityIdWhenOutside)
+    end
+end
+
+checkSpellExists('special_phobia')
+
+for _, advantage in ipairs(advantages) do
+    checkSpecialAbilitiesExist(advantage)
+end
+for _, disadvantage in ipairs(disadvantages) do
+    checkSpecialAbilitiesExist(disadvantage)
+end
+--
 
 local function destroyMainElement()
     if not mainElement then return end
@@ -1081,15 +1112,26 @@ local function onUpdate(dt: number)
         phobiaTimeSinceCheck = 0
 
         local res = nearby.castRay(camera.getPosition(), camera.getPosition() + camera.viewportToWorldVector(v2(0.5, 0.5)) * 2048, {ignore=self})
-        if res and res.hitObject and types.Creature.objectIsInstance(res.hitObject) then
-            local creature = res.hitObject as types.Creature
+        if res and res.hitObject and (types.Creature.objectIsInstance(res.hitObject) or types.NPC.objectIsInstance(res.hitObject)) then
+            local id = ''
+            if types.Creature.objectIsInstance(res.hitObject) then
+                id = types.Creature.record(res.hitObject).id
+            elseif types.NPC.objectIsInstance(res.hitObject) then
+                id = types.NPC.record(res.hitObject).id
+            end
             for _, special in ipairs(phobias) do
                 for _, phobia in ipairs(special.phobiaOf or {}) do
-                    if string.find(types.Creature.record(creature).id:lower(), phobia) then
+                    if string.find(id:lower(), phobia) then
                         phobiaTimeSinceLastTriggerred = 0
                         print('is spell active:' .. tostring(types.Actor.activeSpells(self):isSpellActive('special_phobia')))
                         if not types.Actor.activeSpells(self):isSpellActive('special_phobia') then
-                            ui.showMessage(special.name .. ' triggered by ' .. types.Creature.record(creature).name)
+                            local name: string = nil
+                            if types.Creature.objectIsInstance(res.hitObject) then
+                                name = types.Creature.record(res.hitObject).name
+                            elseif types.NPC.objectIsInstance(res.hitObject) then
+                                name = types.NPC.record(res.hitObject).name
+                            end
+                            ui.showMessage(special.name .. ' triggered by ' .. name)
                             types.Actor.activeSpells(self):add {
                                 id = 'special_phobia',
                                 name = 'Phobia',
@@ -1138,6 +1180,11 @@ local function onLoad(data: table)
     
 end
 
+local function checkAndAddSpecial(special: Special)
+    checkSpecialAbilitiesExist(special)
+    addSpecial(special)
+end
+
 return {
     engineHandlers = {
         onKeyPress = onKeyPress,
@@ -1145,5 +1192,8 @@ return {
         onMouseWheel = onMouseWheel,
         onSave = onSave,
         onLoad = onLoad,
+    },
+    eventHandlers = {
+        AddSpecial = checkAndAddSpecial,
     },
 }
