@@ -36,7 +36,7 @@ local editElementChangeSelection = nil
 local applyElement = nil
 local reputationElement = nil
 
-local settings = storage.playerSection('special_settings')
+local settings = storage.playerSection('Settings_special')
 
 
 local function checkSpellExists(abilityId)

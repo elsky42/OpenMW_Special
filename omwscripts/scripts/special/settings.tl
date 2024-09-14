@@ -7,7 +7,7 @@ I.Settings.registerPage {
 }
 
 I.Settings.registerGroup {
-    key = 'special_settings',
+    key = 'Settings_special',
     l10n = 'special',
     name = 'setting_special_group',
     page = 'special',

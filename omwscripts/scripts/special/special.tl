@@ -36,7 +36,7 @@ local editElementChangeSelection: function(integer) = nil
 local applyElement: ui.Element = nil
 local reputationElement: ui.Element = nil
 
-local settings = storage.playerSection('special_settings')
+local settings = storage.playerSection('Settings_special')
 
 -- sanity check that all the spells exist
 local function checkSpellExists(abilityId: string)
