@@ -983,48 +983,6 @@ local function onKeyPress(key: input.KeyboardEvent)
         editElementChangeSelection(1)
     elseif editElement and key.code == input.KEY.Enter then
         -- TODO
-    elseif key.code == input.KEY.Y then
-        local toBeGroupped: {Grouppable} = {}
-        for _, advantage in ipairs(advantages) do
-            table.insert(toBeGroupped, {
-                layout = {
-                    template = templates.textNormal,
-                    props = { text = advantage.name }
-                },
-                group = advantage.group,
-            } as Grouppable)
-        end
-
-        local items = group(toBeGroupped)
-        local scrollableGroups = ScrollableGroups:new {
-            items = items,
-            events = {
-                mouseClickNonGroup = function(_: number, expandable: Expandable)
-                        ui.showMessage(expandable.layout.props.text as string)
-                    end,
-                mouseDoubleClickNonGroup = function(_: number, expandable: Expandable)
-                        testElement:destroy()
-                        ui.showMessage(expandable.layout.props.text as string)
-                    end,
-                onChange = function() testElement:update() end,
-            },
-            props = {
-                relativeSize = v2(1, 1),
-            },
-        }
-        testElement = ui.create {
-            layer = 'Windows',
-            content = ui.content {
-                background {},
-                scrollableGroups:layout(),
-            },
-            props = {
-                anchor = v2(0.5, 0.5),
-                relativePosition = v2(0.5, 0.5),
-                relativeSize = v2(0.5, 0.5),
-            }
-        }
-        I.UI.setMode('Interface', {windows={}})
     end
 end
 
