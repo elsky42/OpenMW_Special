@@ -227,7 +227,7 @@ addSpecial({
 addSpecial({
    id = 'charismatic',
    name = 'Charismatic',
-   description = '+10 Charisma.',
+   description = '+10 Personality.',
    group = { 'Attribute' },
    abilityId = 'special_charismatic',
    cost = 20,
@@ -236,7 +236,7 @@ addSpecial({
 addSpecial({
    id = 'uncharismatic',
    name = 'Uncharismatic',
-   description = '-10 Charisma.',
+   description = '-10 Personality.',
    group = { 'Attribute' },
    abilityId = 'special_uncharismatic',
    cost = -20,
@@ -520,7 +520,7 @@ addSpecial({
 addSpecial({
    id = 'night_person',
    name = 'Night Person',
-   description = '+10 to Agility, Intelligence, Willpower and Charisma at night between 6pm and 6am.',
+   description = '+10 to Agility, Intelligence, Willpower and Personality at night between 6pm and 6am.',
    group = { 'Trait' },
    abilityIdAtNight = 'special_night_person',
    cost = 10,
